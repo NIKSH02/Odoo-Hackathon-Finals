@@ -46,10 +46,10 @@ const LoginPage = () => {
       // Extract token and user data from response
       let token, user;
       
-      if (response.data) {
+      if (response.data && response.data.data) {
         // Check different possible response formats
-        token = response.data.token || response.data.accessToken || response.data.authToken;
-        user = response.data.user || response.data.userData;
+        token = response.data.data.token || response.data.data.accessToken || response.data.data.authToken;
+        user = response.data.data.user || response.data.data.userData;
       }
       
       dismissToast(loadingToast);
@@ -156,10 +156,10 @@ const LoginPage = () => {
       // Extract token and user data from response
       let token, user;
       
-      if (response.data) {
+      if (response.data && response.data.data) {
         // Check different possible response formats
-        token = response.data.token || response.data.accessToken || response.data.authToken;
-        user = response.data.user || response.data.userData;
+        token = response.data.data.token || response.data.data.accessToken || response.data.data.authToken;
+        user = response.data.data.user || response.data.data.userData;
       }
       
       dismissToast(loadingToast);
