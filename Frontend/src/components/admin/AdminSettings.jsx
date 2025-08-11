@@ -16,7 +16,7 @@ const AdminSettings = () => {
     { id: 'profile', name: 'Profile', icon: UserIcon },
   ];
 
-  const currentUser = localStorage.getItem("userData");
+  const currentUser = JSON.parse(localStorage.getItem("userData"));
   console.log("curr", currentUser)
 
 //   useEffect(() => {
@@ -140,37 +140,50 @@ const AdminSettings = () => {
           </div>
         );
       case 'profile':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-black">Profile Settings</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                <input
-                  type="text"
-                  defaultValue={currentUser.fullName}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  defaultValue={currentUser?.email}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">userName</label>
-                <input
-                  type="text"
-                  value={currentUser?.userName}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                />{currentUser.userName}
-              </div>
-            </div>
-          </div>
-        );
+  const storedUser = localStorage.getItem("userData");
+  const currentUser = storedUser ? JSON.parse(storedUser) : {};
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-black">Profile Settings</h3>
+      <div className="space-y-4">
+        
+        {/* Full Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+          <input
+            type="text"
+            defaultValue={currentUser.fullName || ''}
+            placeholder="Enter full name"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+          />
+        </div>
+
+        {/* Email */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input
+            type="email"
+            defaultValue={currentUser.email || ''}
+            placeholder="Enter email"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+          />
+        </div>
+
+        {/* Username */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+          <input
+            type="text"
+            defaultValue={currentUser.userName || ''}
+            placeholder="Enter username"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+          />
+        </div>
+
+      </div>
+    </div>
+  );
       default:
         return null;
     }
