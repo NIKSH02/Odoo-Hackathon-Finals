@@ -20,6 +20,7 @@ import {
   Home,
   FileText
 } from 'lucide-react';
+import LogoutButton from '../components/LogoutButton';
 
 const FacilityOwnerDashboard = () => {
   const navigate = useNavigate();
@@ -214,21 +215,22 @@ const FacilityOwnerDashboard = () => {
                 <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
                 <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your facilities.</p>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex items-center space-x-3">
                 <button
                   onClick={() => navigate('/facility-management')}
                   className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <Building className="w-4 h-4" />
-                  <span>Quick Add Venue</span>
+                  <span className="hidden sm:inline">Quick Add Venue</span>
                 </button>
                 <button
                   onClick={() => navigate('/court-management')}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <Target className="w-4 h-4" />
-                  <span>Quick Add Court</span>
+                  <span className="hidden sm:inline">Quick Add Court</span>
                 </button>
+                <LogoutButton showUserInfo={false} variant="minimal" />
               </div>
             </div>
           </div>

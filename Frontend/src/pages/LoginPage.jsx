@@ -4,6 +4,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { signinService, sendOtpService, loginWithOtpService, googleAuthService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../hooks/useAuth';
+import { getDashboardRoute, getLoginSuccessMessage } from '../utils/roleRedirects';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -57,9 +58,11 @@ const LoginPage = () => {
       if (token && user) {
         const loginSuccess = await login(token, user);
         if (loginSuccess) {
-          showSuccess('Login successful! Redirecting...');
+          const redirectRoute = getDashboardRoute(user.role);
+          const successMessage = getLoginSuccessMessage(user.role);
+          showSuccess(successMessage);
           setTimeout(() => {
-            navigate('/');
+            navigate(redirectRoute);
           }, 300);
         } else {
           showError('Login failed. Please try again.');
@@ -167,9 +170,11 @@ const LoginPage = () => {
       if (token && user) {
         const loginSuccess = await login(token, user);
         if (loginSuccess) {
-          showSuccess('Login successful! Redirecting...');
+          const redirectRoute = getDashboardRoute(user.role);
+          const successMessage = getLoginSuccessMessage(user.role);
+          showSuccess(successMessage);
           setTimeout(() => {
-            navigate('/');
+            navigate(redirectRoute);
           }, 300);
         } else {
           showError('Login failed. Please try again.');
@@ -197,9 +202,11 @@ const LoginPage = () => {
         
         const loginSuccess = await login(token, user);
         if (loginSuccess) {
-          showSuccess('Google sign-in successful! Redirecting...');
+          const redirectRoute = getDashboardRoute(user.role);
+          const successMessage = getLoginSuccessMessage(user.role);
+          showSuccess(successMessage);
           setTimeout(() => {
-            navigate('/');
+            navigate(redirectRoute);
           }, 300);
         } else {
           showError('Google sign-in failed. Please try again.');

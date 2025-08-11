@@ -5,6 +5,7 @@ import UsersManagement from '../components/admin/UsersManagement';
 import BookingsManagement from '../components/admin/BookingsManagement';
 import CourtsManagement from '../components/admin/CourtsManagement';
 import AdminSettings from '../components/admin/AdminSettings';
+import LogoutButton from '../components/LogoutButton';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -47,16 +48,25 @@ const AdminDashboard = () => {
 
       {/* Main content */}
       <div className="lg:ml-64 min-h-screen">
-        {/* Mobile header */}
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3">
+        {/* Header with logout */}
+        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          {/* Mobile menu button */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-black hover:text-gray-600 transition-colors"
+            className="lg:hidden text-black hover:text-gray-600 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+
+          {/* Title for desktop */}
+          <h1 className="hidden lg:block text-xl font-semibold text-gray-900">
+            Admin Dashboard
+          </h1>
+
+          {/* Logout button */}
+          <LogoutButton showUserInfo={true} />
         </div>
 
         {/* Page content */}

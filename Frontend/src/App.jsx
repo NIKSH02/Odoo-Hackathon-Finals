@@ -45,7 +45,7 @@ const AppContent = () => {
             <Route
               path="/venues"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={['player']}>
                   <SportsVenuesPage />
                 </ProtectedRoute>
               }
@@ -53,7 +53,7 @@ const AppContent = () => {
             <Route
               path="/venue/:id"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={['player']}>
                   <SingleVenueDetailsPage />
                 </ProtectedRoute>
               }
@@ -61,7 +61,7 @@ const AppContent = () => {
             <Route
               path="/venue/:id/booking"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={['player']}>
                   <VenueBookingPage />
                 </ProtectedRoute>
               }
@@ -109,7 +109,7 @@ const AppContent = () => {
             <Route 
               path="/admin" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="admin">
                   <AdminDashboard />
                 </ProtectedRoute>
               } 
@@ -117,7 +117,7 @@ const AppContent = () => {
 			<Route 
               path="/profile" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={['player']}>
                   <UserProfile />
                 </ProtectedRoute>
               }
@@ -125,7 +125,7 @@ const AppContent = () => {
             <Route 
               path="/facility-management" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="facility_owner">
                   <FacilityManagement />
                 </ProtectedRoute>
               } 
@@ -133,7 +133,7 @@ const AppContent = () => {
             <Route 
               path="/facility-owner-dashboard" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="facility_owner">
                   <FacilityOwnerDashboard />
                 </ProtectedRoute>
               } 
@@ -141,23 +141,15 @@ const AppContent = () => {
             <Route 
               path="/booking-overview" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="facility_owner">
                   <BookingOverview />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/owner-profile" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <OwnerProfile />
                 </ProtectedRoute>
               } 
             />
             <Route 
               path="/time-slot-management" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="facility_owner">
                   <TimeSlotManagement />
                 </ProtectedRoute>
               } 
@@ -165,56 +157,16 @@ const AppContent = () => {
             <Route 
               path="/court-management" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="facility_owner">
                   <CourtManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/facility-management" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <FacilityManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/facility-owner-dashboard" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <FacilityOwnerDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/booking-overview" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <BookingOverview />
                 </ProtectedRoute>
               } 
             />
             <Route 
               path="/owner-profile" 
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="facility_owner">
                   <OwnerProfile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/time-slot-management" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <TimeSlotManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/court-management" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <CourtManagement />
                 </ProtectedRoute>
               } 
             />
