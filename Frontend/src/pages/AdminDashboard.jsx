@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import DashboardOverview from '../components/admin/DashboardOverview';
 import UsersManagement from '../components/admin/UsersManagement';
+import VenuesManagement from '../components/admin/VenuesManagement';
 import BookingsManagement from '../components/admin/BookingsManagement';
 import CourtsManagement from '../components/admin/CourtsManagement';
 import AdminSettings from '../components/admin/AdminSettings';
@@ -17,6 +18,8 @@ const AdminDashboard = () => {
         return <DashboardOverview />;
       case 'users':
         return <UsersManagement />;
+      case 'venues':
+        return <VenuesManagement />;
       case 'bookings':
         return <BookingsManagement />;
       case 'courts':

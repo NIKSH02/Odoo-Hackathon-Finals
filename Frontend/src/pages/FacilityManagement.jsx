@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Edit3,
@@ -14,10 +14,14 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Search,
+  Navigation,
+  Loader,
 } from "lucide-react";
 import OwnerSidebar from "../components/OwnerSidebar";
 import * as venueService from "../services/venueService";
 import * as courtService from "../services/courtService";
+import { searchLocations, getCurrentLocation, reverseGeocode } from '../services/locationService.js';
 // import { useAuth } from '../hooks/useAuth'; // Currently unused but may be needed for user authentication
 
 // Facility Modal Component (moved outside to prevent re-creation)
@@ -39,6 +43,165 @@ const FacilityModal = ({
   isSubmittingRequest,
   editingVenue,
 }) => {
+  // Location search state
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(false);
+  const locationInputRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
+
+  // Location search functionality
+  const handleLocationSearch = async (searchQuery) => {
+    if (!searchQuery.trim()) {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSearchingLocation(true);
+    try {
+      const response = await searchLocations(searchQuery);
+      if (response.success && response.data) {
+        setLocationSuggestions(response.data);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error searching locations:', error);
+      setLocationSuggestions([]);
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
+
+  // Debounced search
+  const handleLocationQueryChange = (e) => {
+    const value = e.target.value;
+    setLocationQuery(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      handleLocationSearch(value);
+    }, 300);
+  };
+
+  // Handle location selection
+  const handleLocationSelect = async (locationItem) => {
+    setLocationQuery(locationItem.place_name);
+    setShowSuggestions(false);
+    setLocationSuggestions([]);
+    
+    // Auto-fill form fields with location data
+    let addressUpdate = {
+      city: locationItem.parsed?.city || '',
+      state: locationItem.parsed?.state || '',
+      zipCode: locationItem.parsed?.zipCode || locationItem.parsed?.postcode || '',
+      coordinates: {
+        latitude: locationItem.center[1] || 0,
+        longitude: locationItem.center[0] || 0
+      }
+    };
+
+    // If no zipCode found from search, try reverse geocoding with coordinates
+    if (!addressUpdate.zipCode && locationItem.center) {
+      try {
+        console.log('No zip code from search, trying reverse geocoding...');
+        const reverseData = await reverseGeocode(locationItem.center[0], locationItem.center[1]);
+        if (reverseData.success && reverseData.data?.parsed?.zipCode) {
+          addressUpdate.zipCode = reverseData.data.parsed.zipCode;
+          console.log('Found zip code from reverse geocoding:', addressUpdate.zipCode);
+        }
+      } catch (error) {
+        console.log('Reverse geocoding for zip code failed:', error);
+      }
+    }
+
+    // Update form data
+    setFormData(prev => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        ...addressUpdate
+      }
+    }));
+  };
+
+  // Get current location
+  const handleCurrentLocation = async () => {
+    setIsLoadingCurrentLocation(true);
+    try {
+      const position = await getCurrentLocation();
+      const locationData = await reverseGeocode(position.longitude, position.latitude);
+      
+      if (locationData.success && locationData.data) {
+        setLocationQuery(locationData.data.place_name);
+        setShowSuggestions(false);
+        
+        // Auto-fill form fields with location data
+        const addressUpdate = {
+          city: locationData.data.parsed?.city || '',
+          state: locationData.data.parsed?.state || '',
+          zipCode: locationData.data.parsed?.zipCode || locationData.data.parsed?.postcode || '',
+          coordinates: {
+            latitude: position.latitude,
+            longitude: position.longitude
+          }
+        };
+
+        // Update form data
+        setFormData(prev => ({
+          ...prev,
+          address: {
+            ...prev.address,
+            ...addressUpdate
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      alert('Unable to get your current location. Please check your browser permissions.');
+    } finally {
+      setIsLoadingCurrentLocation(false);
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (locationInputRef.current && !locationInputRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Reset location query when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      // If editing and has address data, set initial location query
+      if (editingVenue && formData.address) {
+        const { city, state } = formData.address;
+        if (city || state) {
+          setLocationQuery(`${city || ''}${city && state ? ', ' : ''}${state || ''}`);
+        }
+      }
+    } else {
+      setLocationQuery('');
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [isOpen, editingVenue, formData.address]);
+
   if (!isOpen) return null;
 
   return (
@@ -109,6 +272,81 @@ const FacilityModal = ({
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Address
             </h3>
+            
+            {/* Location Search */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Location
+              </label>
+              <div ref={locationInputRef} className="relative">
+                <div className="flex items-center space-x-3">
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <input
+                      type="text"
+                      value={locationQuery}
+                      onChange={handleLocationQueryChange}
+                      className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="Search for city, state or area..."
+                      autoComplete="off"
+                    />
+                    {/* Current Location Button */}
+                    <button
+                      type="button"
+                      onClick={handleCurrentLocation}
+                      disabled={isLoadingCurrentLocation}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                      title="Use current location"
+                    >
+                      {isLoadingCurrentLocation ? (
+                        <Loader className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Navigation className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Search suggestions dropdown */}
+                {showSuggestions && locationSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg mt-1 shadow-lg z-50 max-h-60 overflow-y-auto">
+                    {locationSuggestions.map((suggestion, index) => (
+                      <div
+                        key={suggestion.id || index}
+                        onClick={() => handleLocationSelect(suggestion)}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">
+                              {suggestion.parsed?.city || suggestion.place_name.split(',')[0]}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {suggestion.place_name}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Loading indicator */}
+                {isSearchingLocation && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg mt-1 shadow-lg z-50">
+                    <div className="px-4 py-3 flex items-center gap-2">
+                      <Loader className="w-4 h-4 animate-spin text-gray-400" />
+                      <span className="text-sm text-gray-500">Searching...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Search and select a location to auto-fill city, state, zip code, and coordinates
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -121,7 +359,7 @@ const FacilityModal = ({
                     handleNestedInputChange("address", "street", e.target.value)
                   }
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  placeholder="Enter street address"
+                  placeholder="Enter street address (e.g., 123 Main Street)"
                 />
               </div>
               <div>
@@ -134,9 +372,11 @@ const FacilityModal = ({
                   onChange={(e) =>
                     handleNestedInputChange("address", "city", e.target.value)
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  placeholder="Enter city"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-gray-50"
+                  placeholder="Auto-filled from location search"
+                  readOnly
                 />
+                <p className="text-xs text-gray-500 mt-1">Auto-filled from location search</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -148,9 +388,11 @@ const FacilityModal = ({
                   onChange={(e) =>
                     handleNestedInputChange("address", "state", e.target.value)
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  placeholder="Enter state"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-gray-50"
+                  placeholder="Auto-filled from location search"
+                  readOnly
                 />
+                <p className="text-xs text-gray-500 mt-1">Auto-filled from location search</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -166,18 +408,20 @@ const FacilityModal = ({
                       e.target.value
                     )
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  placeholder="Enter zip code"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-gray-50"
+                  placeholder="Auto-filled from location search"
+                  readOnly
                 />
+                <p className="text-xs text-gray-500 mt-1">Auto-filled from location search</p>
               </div>
             </div>
 
-            {/* Coordinates (Optional) */}
+            {/* Coordinates (Auto-filled) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Latitude{" "}
-                  <span className="text-sm text-gray-500">(Optional)</span>
+                  <span className="text-sm text-gray-500">(Auto-filled)</span>
                 </label>
                 <input
                   type="number"
@@ -190,14 +434,15 @@ const FacilityModal = ({
                       Number(e.target.value)
                     )
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  placeholder="19.0760"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-gray-50"
+                  placeholder="Auto-filled from location search"
+                  readOnly
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Longitude{" "}
-                  <span className="text-sm text-gray-500">(Optional)</span>
+                  <span className="text-sm text-gray-500">(Auto-filled)</span>
                 </label>
                 <input
                   type="number"
@@ -210,8 +455,9 @@ const FacilityModal = ({
                       Number(e.target.value)
                     )
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  placeholder="72.8777"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black bg-gray-50"
+                  placeholder="Auto-filled from location search"
+                  readOnly
                 />
               </div>
             </div>
