@@ -1,111 +1,61 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from "react";
+import { X } from "lucide-react";
 
 // Pricing Modal Component
 const PricingModal = ({ sport, isOpen, onClose }) => {
-  if (!isOpen) return null;
-
-  const pricingData = {
-    badminton: {
-      name: "Badminton Standard Synthetic",
-      schedule: [
-        {
-          days: "Monday - Friday",
-          slots: [
-            { time: "05:00 AM - 07:00 AM", price: "INR 500.0 / hour" },
-            { time: "04:00 PM - 10:00 PM", price: "INR 500.0 / hour" }
-          ]
-        },
-        {
-          days: "Saturday - Sunday",
-          slots: [
-            { time: "05:00 AM - 10:00 PM", price: "INR 500.0 / hour" }
-          ]
-        },
-        {
-          days: "Holiday(s)",
-          slots: [
-            { time: "05:00 AM - 10:00 PM", price: "INR 500.0 / hour" }
-          ]
-        }
-      ]
-    },
-    "table-tennis": {
-      name: "Table Tennis Premium",
-      schedule: [
-        {
-          days: "Monday - Friday",
-          slots: [
-            { time: "06:00 AM - 08:00 AM", price: "INR 300.0 / hour" },
-            { time: "05:00 PM - 11:00 PM", price: "INR 350.0 / hour" }
-          ]
-        }
-      ]
-    },
-    "box-cricket": {
-      name: "Box Cricket Standard",
-      schedule: [
-        {
-          days: "All Days",
-          slots: [
-            { time: "06:00 AM - 10:00 PM", price: "INR 800.0 / hour" }
-          ]
-        }
-      ]
-    }
-  };
-
-  const data = pricingData[sport] || pricingData.badminton;
+  if (!isOpen || !sport) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900 capitalize">
-            {sport?.replace('-', ' ')} Pricing
+          <h3 className="text-xl font-bold text-gray-900">
+            {sport._id.charAt(0).toUpperCase() + sport._id.slice(1)} Pricing
           </h3>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <X size={20} />
           </button>
         </div>
-        
+
         <div className="p-6 overflow-y-auto">
-          <div className="bg-gray-50 p-4 rounded-xl mb-6">
-            <p className="text-sm text-gray-600 leading-relaxed">
-              <span className="font-semibold text-gray-800">Note:</span> Pricing is subject to change and is controlled by the venue management.
-            </p>
-          </div>
-          
           <div className="mb-6">
-            <h4 className="text-lg font-bold text-gray-900 mb-1">{data.name}</h4>
-            <div className="w-16 h-1 bg-black rounded-full"></div>
-          </div>
-          
-          <div className="space-y-6">
-            {data.schedule.map((schedule, index) => (
-              <div key={index} className="border border-gray-200 rounded-xl p-4 bg-white">
-                <h5 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide border-b border-gray-100 pb-2">
-                  {schedule.days}
-                </h5>
-                <div className="space-y-3">
-                  {schedule.slots.map((slot, slotIndex) => (
-                    <div key={slotIndex} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-bold text-gray-900">{slot.price}</div>
-                        <div className="text-sm text-gray-500">Per hour rate</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium text-gray-900">{slot.time}</div>
-                        <div className="text-xs text-gray-500">Available hours</div>
-                      </div>
-                    </div>
-                  ))}
+            <h4 className="text-lg font-bold mb-4">
+              {sport._id.charAt(0).toUpperCase() + sport._id.slice(1)} Courts
+            </h4>
+            <div className="grid gap-4">
+              {sport.courts.map((court) => (
+                <div key={court._id} className="bg-gray-50 p-4 rounded-xl">
+                  <div className="flex justify-between items-center mb-2">
+                    <h5 className="font-semibold text-gray-900">
+                      {court.name}
+                    </h5>
+                    <span className="text-lg font-bold text-gray-900">
+                      ₹{court.pricePerHour}/hour
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Court #{court.courtNumber} • Capacity: {court.capacity}{" "}
+                    players
+                  </p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 p-4 rounded-xl">
+            <h5 className="font-semibold text-blue-900 mb-2">
+              Pricing Summary
+            </h5>
+            <div className="space-y-1 text-sm text-blue-800">
+              <p>• Total Courts: {sport.totalCourts}</p>
+              <p>
+                • Price Range: ₹{sport.minPrice} - ₹{sport.maxPrice} per hour
+              </p>
+              <p>• Average Price: ₹{Math.round(sport.averagePrice)} per hour</p>
+            </div>
           </div>
         </div>
       </div>
@@ -114,35 +64,75 @@ const PricingModal = ({ sport, isOpen, onClose }) => {
 };
 
 // Sports Available Component
-export default function SportsAvailable() {
+export default function SportsAvailable({ sportsData = [] }) {
   const [selectedSport, setSelectedSport] = useState(null);
-  
-  const sports = [
-    { id: 'badminton', name: 'Badminton', icon: '🏸', description: 'Indoor courts available' },
-    { id: 'table-tennis', name: 'Table Tennis', icon: '🏓', description: 'Premium tables' },
-    { id: 'box-cricket', name: 'Box Cricket', icon: '🏏', description: 'Outdoor facility' }
-  ];
+
+  const getSportIcon = (sportType) => {
+    const icons = {
+      badminton: "🏸",
+      tennis: "🎾",
+      football: "⚽",
+      basketball: "🏀",
+      cricket: "🏏",
+      volleyball: "🏐",
+      table_tennis: "🏓",
+    };
+    return icons[sportType] || "🏃";
+  };
+
+  const getSportDescription = (sport) => {
+    if (sport.totalCourts === 1) {
+      return `${sport.totalCourts} court available`;
+    }
+    return `${sport.totalCourts} courts available`;
+  };
+
+  if (!sportsData || sportsData.length === 0) {
+    return (
+      <div className="mb-6">
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-gray-900 mb-1">
+            Sports Available
+          </h3>
+          <span className="text-sm text-gray-500">
+            No sports data available
+          </span>
+        </div>
+        <div className="bg-gray-50 p-8 rounded-xl text-center">
+          <p className="text-gray-600">
+            Sports information will be displayed here once available.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="mb-6">
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">Sports Available</h3>
-          <span className="text-sm text-gray-500">Click to view pricing</span>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">
+            Sports Available
+          </h3>
+          <span className="text-sm text-gray-500">
+            Click to view pricing and court details
+          </span>
         </div>
-        
+
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {sports.map((sport) => (
+          {sportsData.map((sport) => (
             <button
-              key={sport.id}
-              onClick={() => setSelectedSport(sport.id)}
+              key={sport._id}
+              onClick={() => setSelectedSport(sport)}
               className="group bg-white border-2 border-gray-200 p-4 rounded-xl text-center hover:border-black hover:shadow-md transition-all duration-200"
             >
-              <div className="text-2xl mb-2">
-                {sport.icon}
+              <div className="text-2xl mb-2">{getSportIcon(sport._id)}</div>
+              <div className="font-semibold text-gray-900 text-sm mb-1 capitalize">
+                {sport._id.replace("_", " ")}
               </div>
-              <div className="font-semibold text-gray-900 text-sm mb-1">{sport.name}</div>
-              <div className="text-xs text-gray-500 mb-2">{sport.description}</div>
+              <div className="text-xs text-gray-500 mb-2">
+                {getSportDescription(sport)}
+              </div>
               <div className="text-xs text-gray-600 font-medium group-hover:text-black transition-colors">
                 View Pricing
               </div>
@@ -151,7 +141,7 @@ export default function SportsAvailable() {
         </div>
       </div>
 
-      <PricingModal 
+      <PricingModal
         sport={selectedSport}
         isOpen={!!selectedSport}
         onClose={() => setSelectedSport(null)}

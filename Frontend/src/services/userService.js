@@ -10,52 +10,29 @@ export const getCurrentUserService = async () => {
   }
 };
 
-// Update user profile (with file upload support)
-export const updateProfileService = async (profileData) => {
-  try {
-    const formData = new FormData();
-    
-    // Add text fields to formData
-    if (profileData.fullName) formData.append('fullName', profileData.fullName);
-    if (profileData.username) formData.append('username', profileData.username);
-    if (profileData.role) formData.append('role', profileData.role);
-
-    // Add profile picture if provided
-    if (profileData.profilePicture && profileData.profilePicture instanceof File) {
-      formData.append('profilePicture', profileData.profilePicture);
-    }
-
-    console.log('Sending profile update request with data:', Object.fromEntries(formData));
-    
-    const response = await api.put('/users/profile', formData, {
+// Update user profile
+export const updateProfileService = async (data) => {
+  // Handle FormData for profile picture upload
+  if (data instanceof FormData) {
+    return api.put('/users/profile', data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
-    console.log('Profile update response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Profile update error:', error);
-    throw error.response?.data || error;
   }
+  return api.put('/users/profile', data);
 };
 
 // Update profile picture only
-export const updateProfilePictureService = async (profilePicture) => {
-  try {
-    const formData = new FormData();
-    formData.append('profilePicture', profilePicture);
-
-    const response = await api.put('/users/profile-picture', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+export const updateProfilePictureService = async (file) => {
+  const formData = new FormData();
+  formData.append('profilePicture', file);
+  
+  return api.put('/users/profile-picture', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
 
 // Get user by ID

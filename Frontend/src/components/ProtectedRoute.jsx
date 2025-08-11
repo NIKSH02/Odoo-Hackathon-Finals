@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
   } else {
     // Route is for non-authenticated users (like login/register)
     if (isAuthenticated) {
-      // If user is authenticated, redirect to dashboard
+      // If user is authenticated, redirect to home page
       return <Navigate to="/" replace />;
     }
   }

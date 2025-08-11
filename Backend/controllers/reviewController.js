@@ -1,6 +1,7 @@
 import Review from "../models/review.js";
 import Booking from "../models/booking.js";
 import Venue from "../models/venue.js";
+import mongoose from "mongoose";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -64,6 +65,72 @@ const createReview = asyncHandler(async (req, res) => {
     comment,
     photos,
     isVerified: true, // Since it's based on actual booking
+  });
+
+  await review.save();
+
+  // Update venue rating
+  await updateVenueRating(venue);
+
+  await review.populate([
+    { path: "user", select: "fullName profilePicture" },
+    { path: "venue", select: "name" },
+  ]);
+
+  res
+    .status(201)
+    .json(new ApiResponse(201, review, "Review created successfully"));
+});
+
+// Create review without booking requirement (for testing/demo)
+const createReviewDirect = asyncHandler(async (req, res) => {
+  const { venue, rating, comment } = req.body;
+
+  // Verify venue exists
+  const venueDoc = await Venue.findById(venue);
+  if (!venueDoc) {
+    throw new ApiError(404, "Venue not found");
+  }
+
+  // Check if user already reviewed this venue (limit one review per venue per user without booking)
+  const existingReview = await Review.findOne({
+    user: req.user.id,
+    venue: venue,
+    booking: { $exists: false },
+  });
+  if (existingReview) {
+    throw new ApiError(400, "You have already reviewed this venue");
+  }
+
+  // Handle photo uploads
+  let photos = [];
+  if (req.files && req.files.length > 0) {
+    for (let i = 0; i < req.files.length; i++) {
+      try {
+        const uploadResult = await uploadToCloudinary(req.files[i].buffer, {
+          folder: "quickcourt/reviews",
+          public_id: `review_${req.user.id}_${Date.now()}_${i}`,
+        });
+        photos.push({
+          url: uploadResult.secure_url,
+          caption: req.files[i].originalname,
+        });
+      } catch (error) {
+        console.error("Photo upload failed:", error);
+      }
+    }
+  }
+
+  // Parse rating if it's a string
+  const parsedRating = typeof rating === "string" ? JSON.parse(rating) : rating;
+
+  const review = new Review({
+    user: req.user.id,
+    venue,
+    rating: parsedRating,
+    comment,
+    photos,
+    isVerified: false, // Not based on actual booking
   });
 
   await review.save();
@@ -385,34 +452,53 @@ const getUserReviews = asyncHandler(async (req, res) => {
 
 // Helper function to update venue rating
 const updateVenueRating = async (venueId) => {
-  const ratingStats = await Review.aggregate([
-    { $match: { venue: venueId } },
-    {
-      $group: {
-        _id: "$venue",
-        averageRating: { $avg: "$rating.overall" },
-        totalReviews: { $sum: 1 },
-      },
-    },
-  ]);
+  try {
+    console.log("Updating venue rating for venue:", venueId);
 
-  if (ratingStats.length > 0) {
-    const { averageRating, totalReviews } = ratingStats[0];
-    await Venue.findByIdAndUpdate(venueId, {
-      "rating.average": Math.round(averageRating * 10) / 10, // Round to 1 decimal
-      "rating.totalReviews": totalReviews,
-    });
-  } else {
-    // No reviews left
-    await Venue.findByIdAndUpdate(venueId, {
-      "rating.average": 0,
-      "rating.totalReviews": 0,
-    });
+    const ratingStats = await Review.aggregate([
+      { $match: { venue: new mongoose.Types.ObjectId(venueId) } },
+      {
+        $group: {
+          _id: "$venue",
+          averageRating: { $avg: "$rating.overall" },
+          totalReviews: { $sum: 1 },
+        },
+      },
+    ]);
+
+    console.log("Rating stats:", ratingStats);
+
+    if (ratingStats.length > 0) {
+      const { averageRating, totalReviews } = ratingStats[0];
+      const updateResult = await Venue.findByIdAndUpdate(
+        venueId,
+        {
+          "rating.average": Math.round(averageRating * 10) / 10, // Round to 1 decimal
+          "rating.totalReviews": totalReviews,
+        },
+        { new: true }
+      );
+      console.log("Updated venue rating:", updateResult?.rating);
+    } else {
+      // No reviews left
+      const updateResult = await Venue.findByIdAndUpdate(
+        venueId,
+        {
+          "rating.average": 0,
+          "rating.totalReviews": 0,
+        },
+        { new: true }
+      );
+      console.log("Reset venue rating to 0:", updateResult?.rating);
+    }
+  } catch (error) {
+    console.error("Error updating venue rating:", error);
   }
 };
 
 export {
   createReview,
+  createReviewDirect,
   getVenueReviews,
   getReviewById,
   updateReview,

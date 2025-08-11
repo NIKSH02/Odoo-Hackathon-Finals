@@ -8,16 +8,26 @@ import {
   ChevronRight,
   Play,
   Users,
-  Star
+  Star,
+  Loader,
+  Navigation
 } from 'lucide-react';
+import { searchLocations, getCurrentLocation, reverseGeocode } from '../services/locationService.js';
 
-const HeroSection = () => {
-  const [location, setLocation] = useState('Ahmedabad');
+const HeroSection = ({ onOpenSignUpModal, onOpenLoginModal, onLocationSearch }) => {
+  const [location, setLocation] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [typewriterText, setTypewriterText] = useState('');
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const heroRef = useRef(null);
+  const locationInputRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   // Sports slideshow images
   const slides = [
@@ -41,7 +51,7 @@ const HeroSection = () => {
       id: 3,
       title: "Basketball Arena",
       description: "Slam dunk your way to victory",
-      image: "�",
+      image: "🏀",
       bgGradient: "from-purple-50 to-violet-100",
       stats: { players: "200+", venues: "15+" }
     },
@@ -128,8 +138,152 @@ const HeroSection = () => {
     }
   }, [slides.length, isPaused]);
 
+  // Location search functionality
+  const handleLocationSearch = async (searchQuery) => {
+    if (!searchQuery.trim()) {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await searchLocations(searchQuery);
+      if (response.success && response.data) {
+        setLocationSuggestions(response.data);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error searching locations:', error);
+      setLocationSuggestions([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  const handleLocationChange = (e) => {
+    const value = e.target.value;
+    setLocation(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      handleLocationSearch(value);
+    }, 300);
+  };
+
+  // Handle location selection
+  const handleLocationSelect = (locationItem) => {
+    setLocation(locationItem.place_name);
+    setSelectedLocation(locationItem);
+    setShowSuggestions(false);
+    setLocationSuggestions([]);
+    
+    // Log the selected location details
+    console.log('Selected location:', {
+      city: locationItem.parsed?.city,
+      state: locationItem.parsed?.state,
+      country: locationItem.parsed?.country,
+      coordinates: locationItem.center
+    });
+
+    // Trigger venue search in parent component
+    if (onLocationSearch) {
+      onLocationSearch({
+        coordinates: locationItem.center,
+        location: locationItem.place_name,
+        city: locationItem.parsed?.city,
+        state: locationItem.parsed?.state,
+        country: locationItem.parsed?.country
+      });
+    }
+  };
+
+  // Get current location
+  const handleCurrentLocation = async () => {
+    setIsLoadingLocation(true);
+    try {
+      const position = await getCurrentLocation();
+      const locationData = await reverseGeocode(position.longitude, position.latitude);
+      
+      if (locationData.success && locationData.data) {
+        setLocation(locationData.data.place_name);
+        setSelectedLocation(locationData.data);
+        setShowSuggestions(false);
+        
+        console.log('Current location:', {
+          city: locationData.data.parsed?.city,
+          state: locationData.data.parsed?.state,
+          country: locationData.data.parsed?.country,
+          coordinates: [position.longitude, position.latitude]
+        });
+
+        // Trigger venue search in parent component
+        if (onLocationSearch) {
+          onLocationSearch({
+            coordinates: [position.longitude, position.latitude],
+            location: locationData.data.place_name,
+            city: locationData.data.parsed?.city,
+            state: locationData.data.parsed?.state,
+            country: locationData.data.parsed?.country
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      alert('Unable to get your current location. Please check your browser permissions.');
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
+
+  // Handle search submission
+  const handleSearch = () => {
+    if (selectedLocation) {
+      console.log('Searching venues near:', {
+        city: selectedLocation.parsed?.city,
+        state: selectedLocation.parsed?.state,
+        country: selectedLocation.parsed?.country,
+        coordinates: selectedLocation.center
+      });
+      
+      // Trigger venue search in parent component
+      if (onLocationSearch) {
+        onLocationSearch({
+          coordinates: selectedLocation.center,
+          location: selectedLocation.place_name,
+          city: selectedLocation.parsed?.city,
+          state: selectedLocation.parsed?.state,
+          country: selectedLocation.parsed?.country
+        });
+      }
+    } else if (location.trim()) {
+      // If user typed but didn't select, search with the first suggestion
+      handleLocationSearch(location);
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (locationInputRef.current && !locationInputRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div ref={heroRef} className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden">
+    <div ref={heroRef} className="relative bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0">
         {/* Geometric shapes with 3D effect */}
@@ -166,28 +320,79 @@ const HeroSection = () => {
                   </span>
                 </h1>
               </div>
-              
           </div>
           
             {/* Search Section First - Moved Up */}
-            <div className="  bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-100 max-w-lg mx-auto w-full lg:mx-0 lg:max-w-none">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-100 max-w-lg mx-auto w-full lg:mx-0 lg:max-w-none">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center justify-center lg:justify-start gap-2">
                   <Search className="w-5 h-5" />
                   Find Your Court
                 </h3>
                 <div className="flex items-center space-x-3">
-                  <div className="relative flex-1">
+                  <div ref={locationInputRef} className="relative flex-1">
                     <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
                     <input
                       type="text"
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-300 focus:border-transparent font-medium"
+                      onChange={handleLocationChange}
+                      className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-300 focus:border-transparent font-medium"
                       placeholder="Enter your location"
+                      autoComplete="off"
                     />
+                    {/* Current Location Button */}
+                    <button
+                      onClick={handleCurrentLocation}
+                      disabled={isLoadingLocation}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                      title="Use current location"
+                    >
+                      {isLoadingLocation ? (
+                        <Loader className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Navigation className="w-4 h-4" />
+                      )}
+                    </button>
+                    
+                    {/* Search suggestions dropdown */}
+                    {showSuggestions && locationSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-lg z-50 max-h-60 overflow-y-auto">
+                        {locationSuggestions.map((suggestion, index) => (
+                          <div
+                            key={suggestion.id || index}
+                            onClick={() => handleLocationSelect(suggestion)}
+                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="flex items-start gap-2">
+                              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-900 truncate">
+                                  {suggestion.parsed?.city || suggestion.place_name.split(',')[0]}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {suggestion.place_name}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Loading indicator */}
+                    {isSearching && (
+                      <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-lg z-50">
+                        <div className="px-4 py-3 flex items-center gap-2">
+                          <Loader className="w-4 h-4 animate-spin text-gray-400" />
+                          <span className="text-sm text-gray-500">Searching...</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <button className="px-4 lg:px-6 py-3 bg-gradient-to-r from-gray-800 to-black text-white rounded-xl hover:shadow-xl transition-all transform hover:scale-105 flex items-center space-x-2">
+                  <button 
+                    onClick={handleSearch}
+                    className="px-4 lg:px-6 py-3 bg-gradient-to-r from-gray-800 to-black text-white rounded-xl hover:shadow-xl transition-all transform hover:scale-105 flex items-center space-x-2"
+                  >
                     <Search className="w-4 h-4" />
                     <span className="hidden sm:inline font-semibold">Search</span>
                   </button>

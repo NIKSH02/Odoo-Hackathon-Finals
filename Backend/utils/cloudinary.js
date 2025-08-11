@@ -26,6 +26,10 @@ export const uploadToCloudinary = async (buffer, options = {}) => {
           { width: 400, height: 400, crop: "fill" },
           { quality: "auto", fetch_format: "auto" },
         ],
+        // Strip all metadata including EXIF data
+        strip_exif: true,
+        // Ensure consistent format
+        format: "jpg",
         ...options,
       };
 

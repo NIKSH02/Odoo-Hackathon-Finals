@@ -564,6 +564,47 @@ const markBookingCompleted = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, booking, "Booking marked as completed"));
 });
 
+// Get venue bookings by specific date (public endpoint for availability checking)
+const getVenueBookingsByDate = asyncHandler(async (req, res) => {
+  const { venueId, date } = req.params;
+
+  // Validate venue exists
+  const venue = await Venue.findById(venueId);
+  if (!venue) {
+    throw new ApiError(404, "Venue not found");
+  }
+
+  // Parse the date
+  const searchDate = new Date(date);
+  const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
+
+  // Find all bookings for this venue on the specified date
+  const bookings = await Booking.find({
+    venue: venueId,
+    bookingDate: {
+      $gte: startOfDay,
+      $lt: endOfDay,
+    },
+    status: { $in: ["confirmed", "pending"] }, // Only confirmed and pending bookings affect availability
+  })
+    .populate("court", "name sportType")
+    .select("court bookingDate timeSlot sport startTime endTime")
+    .sort({ "timeSlot.startTime": 1 });
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        bookings,
+        date: date,
+        total: bookings.length,
+      },
+      "Venue bookings retrieved successfully"
+    )
+  );
+});
+
 export {
   createBooking,
   getUserBookings,
@@ -571,6 +612,7 @@ export {
   cancelBooking,
   updatePaymentStatus,
   getVenueBookings,
+  getVenueBookingsByDate,
   getBookingAnalytics,
   markBookingCompleted,
 };

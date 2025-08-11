@@ -70,9 +70,9 @@ const OTPVerificationPage = () => {
       showSuccess('OTP verified successfully!');
       
       if (purpose === 'login') {
-        // For login, set the user in auth context and redirect to dashboard
+        // For login, set the user in auth context and redirect to venues page
         login(response.data.data);
-        navigate('/dashboard');
+        navigate('/venues');
       } else {
         // For signup, redirect to login page
         showSuccess('Registration completed! Please login with your credentials.');
