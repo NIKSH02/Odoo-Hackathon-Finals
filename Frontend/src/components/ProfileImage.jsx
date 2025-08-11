@@ -7,18 +7,25 @@ const ProfileImage = ({
   fallbackText = "?",
   className = "" 
 }) => {
-  // Fix Cloudinary rotation issues by adding auto-orient transformation
+  // Optimize Cloudinary images and add cache busting for updates
   const getOptimizedImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
     
     if (imageUrl.includes('cloudinary.com')) {
-      // Add transformations to fix rotation and optimize the image
-      // a_exif automatically rotates image based on EXIF orientation data
-      const transformations = 'a_exif,f_auto,q_auto:good,c_fill,g_face';
-      return imageUrl.replace('/upload/', `/upload/${transformations}/`);
+      // Since we're processing images on frontend, just optimize without rotation
+      const transformations = 'f_auto,q_auto:good';
+      let optimizedUrl = imageUrl.replace('/upload/', `/upload/${transformations}/`);
+      
+      // Add cache busting parameter to force reload
+      const cacheBuster = `?v=${Date.now()}`;
+      optimizedUrl += cacheBuster;
+      
+      return optimizedUrl;
     }
     
-    return imageUrl;
+    // For non-Cloudinary images, add cache busting
+    const separator = imageUrl.includes('?') ? '&' : '?';
+    return `${imageUrl}${separator}v=${Date.now()}`;
   };
 
   const optimizedSrc = getOptimizedImageUrl(src);

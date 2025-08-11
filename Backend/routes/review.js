@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createReview,
+  createReviewDirect,
   getVenueReviews,
   getReviewById,
   updateReview,
@@ -27,6 +28,14 @@ router.post(
   upload.array("photos", 5),
   handleUploadError,
   createReview
+);
+
+router.post(
+  "/direct",
+  protect,
+  upload.array("photos", 5),
+  handleUploadError,
+  createReviewDirect
 );
 
 router.put(

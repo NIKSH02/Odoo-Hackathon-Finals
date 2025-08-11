@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
+import { processImageFile, createOrientedPreview } from '../utils/imageUtils';
 
 const ImageUpload = ({ onImageSelect, existingImage = null, disabled = false }) => {
   const [previewImage, setPreviewImage] = useState(existingImage);
@@ -23,18 +24,35 @@ const ImageUpload = ({ onImageSelect, existingImage = null, disabled = false }) 
     return true;
   };
 
-  const handleFileSelect = (file) => {
+  const handleFileSelect = async (file) => {
     if (!validateFile(file)) return;
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewImage(e.target.result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Process the image to remove EXIF data and correct orientation
+      const processedFile = await processImageFile(file, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.9
+      });
 
-    // Pass file to parent component
-    onImageSelect(file);
+      // Create oriented preview
+      const previewUrl = await createOrientedPreview(file);
+      setPreviewImage(previewUrl);
+
+      // Pass processed file to parent component
+      onImageSelect(processedFile);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      showError('Failed to process image. Please try again.');
+      
+      // Fallback to original file if processing fails
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+      onImageSelect(file);
+    }
   };
 
   const handleInputChange = (e) => {
