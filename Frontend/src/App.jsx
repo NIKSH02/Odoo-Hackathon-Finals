@@ -15,7 +15,7 @@ import OTPVerificationPage from './pages/OTPVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
-import ChatBox from './components/ChatBox';
+
 import GoogleTranslate from './services/GoogleTranslate';
 import SingleVenueDetailsPage from './pages/SingleVenueDetailsPage'
 import VenueBookingPage from './pages/VenueBookingPage'
