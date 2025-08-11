@@ -133,36 +133,44 @@ export const getVenueDetails = async (venueId) => {
   }
 };
 
-export const approveFacility = async (venueId) => {
+export const approveFacility = async (venueId, data = {}) => {
   try {
-    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/approve`);
+    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/approve`, {
+      comments: data.comments || 'Venue approved by admin'
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
 };
 
-export const rejectFacility = async (venueId) => {
+export const rejectFacility = async (venueId, data = {}) => {
   try {
-    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/reject`);
+    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/reject`, {
+      reason: data.reason || 'Venue rejected by admin'
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
 };
 
-export const suspendVenue = async (venueId) => {
+export const suspendVenue = async (venueId, data = {}) => {
   try {
-    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/suspend`);
+    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/suspend`, {
+      reason: data.reason || 'Venue suspended by admin'
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
 };
 
-export const reactivateVenue = async (venueId) => {
+export const reactivateVenue = async (venueId, data = {}) => {
   try {
-    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/reactivate`);
+    const response = await axiosInstance.patch(`/admin/facilities/${venueId}/reactivate`, {
+      reason: data.reason || 'Venue reactivated by admin'
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;

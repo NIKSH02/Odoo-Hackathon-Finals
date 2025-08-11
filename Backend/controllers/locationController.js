@@ -19,11 +19,11 @@ export const searchLocations = asyncHandler(async (req, res) => {
       .forwardGeocode({
         query: query,
         limit: 5,
-        types: ['place', 'locality', 'neighborhood', 'address']
+        types: ['address', 'place', 'locality', 'neighborhood', 'postcode']
       })
       .send();
 
-    const suggestions = response.body.features.map(feature => {
+    const suggestions = response.body.features.map((feature) => {
       const location = {
         id: feature.id,
         place_name: feature.place_name,
@@ -33,10 +33,11 @@ export const searchLocations = asyncHandler(async (req, res) => {
         context: feature.context || []
       };
 
-      // Extract city, state, country from context
+      // Extract city, state, country, zipCode from context
       let city = '';
       let state = '';
       let country = '';
+      let zipCode = '';
 
       // Try to get from place_name first
       if (feature.place_name) {
@@ -46,26 +47,51 @@ export const searchLocations = asyncHandler(async (req, res) => {
         if (parts.length >= 1) country = parts[parts.length - 1];
       }
 
-      // Override with context data if available
+      // Override with context data if available (more accurate)
       feature.context?.forEach(ctx => {
-        if (ctx.id.startsWith('place')) {
+        if (ctx.id.startsWith('place') || ctx.id.startsWith('locality')) {
           city = ctx.text;
         } else if (ctx.id.startsWith('region')) {
           state = ctx.text;
         } else if (ctx.id.startsWith('country')) {
           country = ctx.text;
+        } else if (ctx.id.startsWith('postcode')) {
+          zipCode = ctx.text;
         }
       });
 
-      // Console log as requested
-      console.log(`Location found - City: ${city}, State: ${state}, Country: ${country}`);
+      // Additional check for zipCode in properties
+      if (!zipCode && feature.properties) {
+        zipCode = feature.properties.postcode || feature.properties.zip || '';
+      }
+
+      // Extract zipCode from place_name if still not found (for some regions)
+      if (!zipCode && feature.place_name) {
+        // More comprehensive regex for different postal code formats
+        const zipPatterns = [
+          /\b\d{6}\b/,           // 6-digit codes (India)
+          /\b\d{5}(?:-\d{4})?\b/, // 5-digit codes (US) with optional 4-digit extension
+          /\b[A-Z]\d[A-Z]\s*\d[A-Z]\d\b/i, // Canadian postal codes
+          /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i // UK postal codes
+        ];
+        
+        for (const pattern of zipPatterns) {
+          const zipMatch = feature.place_name.match(pattern);
+          if (zipMatch) {
+            zipCode = zipMatch[0].replace(/\s/g, ''); // Remove spaces
+            break;
+          }
+        }
+      }
 
       return {
         ...location,
         parsed: {
           city,
           state,
-          country
+          country,
+          zipCode,
+          postcode: zipCode // Alternative naming for compatibility
         }
       };
     });
@@ -91,7 +117,8 @@ export const reverseGeocode = asyncHandler(async (req, res) => {
     const response = await geocodingClient
       .reverseGeocode({
         query: [parseFloat(longitude), parseFloat(latitude)],
-        limit: 1
+        limit: 1,
+        types: ['address', 'place', 'locality', 'postcode']
       })
       .send();
 
@@ -101,10 +128,11 @@ export const reverseGeocode = asyncHandler(async (req, res) => {
 
     const feature = response.body.features[0];
     
-    // Extract city, state, country
+    // Extract city, state, country, zipCode
     let city = '';
     let state = '';
     let country = '';
+    let zipCode = '';
 
     if (feature.place_name) {
       const parts = feature.place_name.split(', ');
@@ -113,17 +141,44 @@ export const reverseGeocode = asyncHandler(async (req, res) => {
       if (parts.length >= 1) country = parts[parts.length - 1];
     }
 
+    // Extract from context (more accurate)
     feature.context?.forEach(ctx => {
-      if (ctx.id.startsWith('place')) {
+      if (ctx.id.startsWith('place') || ctx.id.startsWith('locality')) {
         city = ctx.text;
       } else if (ctx.id.startsWith('region')) {
         state = ctx.text;
       } else if (ctx.id.startsWith('country')) {
         country = ctx.text;
+      } else if (ctx.id.startsWith('postcode')) {
+        zipCode = ctx.text;
       }
     });
 
-    console.log(`Reverse geocoded - City: ${city}, State: ${state}, Country: ${country}`);
+    // Additional check for zipCode in properties
+    if (!zipCode && feature.properties) {
+      zipCode = feature.properties.postcode || feature.properties.zip || '';
+    }
+
+    // Extract zipCode from place_name if still not found
+    if (!zipCode && feature.place_name) {
+      // More comprehensive regex for different postal code formats
+      const zipPatterns = [
+        /\b\d{6}\b/,           // 6-digit codes (India)
+        /\b\d{5}(?:-\d{4})?\b/, // 5-digit codes (US) with optional 4-digit extension
+        /\b[A-Z]\d[A-Z]\s*\d[A-Z]\d\b/i, // Canadian postal codes
+        /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i // UK postal codes
+      ];
+      
+      for (const pattern of zipPatterns) {
+        const zipMatch = feature.place_name.match(pattern);
+        if (zipMatch) {
+          zipCode = zipMatch[0].replace(/\s/g, ''); // Remove spaces
+          break;
+        }
+      }
+    }
+
+    console.log(`Reverse geocoded - City: ${city}, State: ${state}, Country: ${country}, Zip Code: ${zipCode}`);
 
     const locationData = {
       id: feature.id,
@@ -135,7 +190,9 @@ export const reverseGeocode = asyncHandler(async (req, res) => {
       parsed: {
         city,
         state,
-        country
+        country,
+        zipCode,
+        postcode: zipCode // Alternative naming for compatibility
       }
     };
 
