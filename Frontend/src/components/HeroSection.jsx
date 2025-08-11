@@ -16,6 +16,7 @@ const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [typewriterText, setTypewriterText] = useState('');
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const heroRef = useRef(null);
 
   // Sports slideshow images
@@ -64,10 +65,20 @@ const HeroSection = () => {
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
+    setIsPaused(true);
+    setTimeout(() => setIsPaused(false), 8000); // Resume auto-slide after 8 seconds
   };
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    setIsPaused(true);
+    setTimeout(() => setIsPaused(false), 8000); // Resume auto-slide after 8 seconds
+  };
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index);
+    setIsPaused(true);
+    setTimeout(() => setIsPaused(false), 8000); // Resume auto-slide after 8 seconds
   };
 
   // Typewriter effect
@@ -108,12 +119,14 @@ const HeroSection = () => {
 
   // Auto-slide functionality
   useEffect(() => {
-    const autoSlide = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 4000); // Change slide every 4 seconds
+    if (!isPaused) {
+      const autoSlide = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 4000); // Change slide every 4 seconds
 
-    return () => clearInterval(autoSlide);
-  }, [slides.length]);
+      return () => clearInterval(autoSlide);
+    }
+  }, [slides.length, isPaused]);
 
   return (
     <div ref={heroRef} className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden">
@@ -143,14 +156,25 @@ const HeroSection = () => {
       <div className="relative z-40 container mx-auto px-6 py-12">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left Side - Search, Typewriter Heading, Context */}
-          <div className="space-y-8 flex flex-col justify-center min-h-[500px]">
-            
-            {/* Search Section First */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-100 max-w-lg mx-auto w-full lg:mx-0 lg:max-w-none">
+          <div className=" flex flex-col justify-center min-h-[400px]">
+             <div className=" text-center lg:text-left">
+              <div className="min-h-[120px] lg:min-h-[60px]">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-4xl font-bold leading-tight">
+                  <span className="bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent">
+                    {typewriterText}
+                    <span className="animate-pulse">|</span>
+                  </span>
+                </h1>
+              </div>
+              
+          </div>
+          
+            {/* Search Section First - Moved Up */}
+            <div className="  bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-100 max-w-lg mx-auto w-full lg:mx-0 lg:max-w-none">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center justify-center lg:justify-start gap-2">
                   <Search className="w-5 h-5" />
-                  Find Your Game
+                  Find Your Court
                 </h3>
                 <div className="flex items-center space-x-3">
                   <div className="relative flex-1">
@@ -169,7 +193,7 @@ const HeroSection = () => {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                  {['Nearby', 'Top Rated', 'Available Now'].map((tag) => (
+                  {['Nearby', 'Top Rated'].map((tag) => (
                     <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200 transition-colors">
                       {tag}
                     </span>
@@ -177,40 +201,10 @@ const HeroSection = () => {
                 </div>
               </div>
             </div>
+              </div>
 
             {/* Typewriter Heading */}
-            <div className="space-y-6 text-center lg:text-left">
-              <div className="min-h-[120px] lg:min-h-[150px]">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-4xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent">
-                    {typewriterText}
-                    <span className="animate-pulse">|</span>
-                  </span>
-                </h1>
-              </div>
-              
-              <div className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                Welcome to QuickCourt - your ultimate destination for connecting with sports enthusiasts and discovering venues. 
-               
-              </div>
-
-              {/* Feature Highlights */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-md text-center hover:shadow-lg transition-all">
-                  <div className="text-2xl font-bold text-gray-800">500+</div>
-                  <div className="text-sm text-gray-600">Premium Venues</div>
-                </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-md text-center hover:shadow-lg transition-all">
-                  <div className="text-2xl font-bold text-gray-800">10K+</div>
-                  <div className="text-sm text-gray-600">Active Players</div>
-                </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-md text-center hover:shadow-lg transition-all">
-                  <div className="text-2xl font-bold text-gray-800">50K+</div>
-                  <div className="text-sm text-gray-600">Games Played</div>
-                </div>
-              </div>
-            </div>
-          </div>
+         
 
           {/* Right Side - Interactive Slideshow (Hidden on Mobile) */}
           <div className="hidden lg:block space-y-8">
@@ -279,7 +273,7 @@ const HeroSection = () => {
                 {slides.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentSlide(index)}
+                    onClick={() => goToSlide(index)}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
                       index === currentSlide 
                         ? 'bg-gray-800 scale-125' 
