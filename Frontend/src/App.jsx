@@ -20,6 +20,7 @@ import GoogleTranslate from './services/GoogleTranslate';
 import SingleVenueDetailsPage from './pages/SingleVenueDetailsPage'
 import VenueBookingPage from './pages/VenueBookingPage'
 import { useAuth } from './hooks/useAuth';
+import SportsVenuesPage from './pages/SportsVenuesPage'
 
 // Inner component that uses the auth context
 const AppContent = () => {
@@ -33,6 +34,14 @@ const AppContent = () => {
         <main>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route 
+              path="/venues"
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <SportsVenuesPage />
+                </ProtectedRoute>
+              }
+            />  
             <Route 
               path="/venue/:venueId" 
               element={
