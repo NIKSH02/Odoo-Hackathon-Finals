@@ -19,3 +19,8 @@ export const getUserByIdService = async (userId) => {
 export const deleteAccountService = async () => {
   return api.delete('/user/account');
 };
+
+// Update user role (for Google login users)
+export const updateUserRoleService = async (data) => {
+  return api.put('/user/role', data);
+};

@@ -12,11 +12,12 @@ const userSchema = new mongoose.Schema({
   refreshToken: String,
   googleId: { type: String, unique: true, sparse: true },
   profilePicture: { type: String },
+  passwordResetToken: String,
+  passwordResetExpiry: Date,
   role: {
     type: String,
     enum: ["player", "facility_owner", "admin"],
-    required: true,
-    default: "player",
+    required: false, // Make it optional so users can be created without a role
   },
   authProvider: { type: String, enum: ["local", "google"], default: "local" },
 });

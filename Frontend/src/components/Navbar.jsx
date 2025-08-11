@@ -61,7 +61,7 @@ const Navbar = ({ onNavigate }) => {
     <nav className="bg-white dark:bg-gray-900 shadow-md transition-colors duration-300 ease-in-out">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <a href="#" onClick={() => handleNavLinkClick('home')} className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          <span className="text-indigo-600 dark:text-indigo-400">Pro</span>duct
+          <span className="text-indigo-600 dark:text-indigo-400">Quick</span>Court
         </a>
 
         <div className="hidden md:flex space-x-8 items-center">

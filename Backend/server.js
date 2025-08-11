@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import ApiError from "./utils/ApiError.js";
+import ApiResponse from './utils/ApiResponse.js';
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import venueRoutes from "./routes/venue.js";
@@ -68,15 +69,10 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error("Error:", err); // Add this line for debugging
   const statusCode = err.statusCode || 500;
-  res
-    .status(statusCode)
-    .json(
-      new ApiError(
-        statusCode,
-        err.message || "Internal Server Error",
-        err.errors || []
-      )
-    );
+  const message = err.message || 'Internal Server Error';
+  const errors = err.errors || [];
+  
+  res.status(statusCode).json(new ApiResponse(statusCode, null, message));
 });
 // Start Server
 app.listen(PORT, () => {

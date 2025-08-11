@@ -3,6 +3,7 @@ import {
   getCurrentUser,
   updateProfile,
   updateProfilePicture,
+  updateUserRole,
   getUserById,
   deleteAccount,
 } from "../controllers/userController.js";
@@ -28,6 +29,7 @@ router.put(
   handleUploadError,
   updateProfilePicture
 );
+router.put("/role", protect, updateUserRole);
 router.delete("/account", protect, deleteAccount);
 
 // Public routes

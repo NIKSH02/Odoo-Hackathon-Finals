@@ -172,10 +172,39 @@ const deleteAccount = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Account deleted successfully"));
 });
 
+// Update user role (for Google login users who haven't set a role)
+const updateUserRole = asyncHandler(async (req, res) => {
+  const { role } = req.body;
+  const userId = req.user.id;
+
+  // Validate role
+  if (!role || !["player", "facility_owner"].includes(role)) {
+    throw new ApiError(
+      400,
+      'Invalid role. Must be either "player" or "facility_owner"'
+    );
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { role },
+    { new: true }
+  ).select("-password -refreshToken -otp -otpExpiry");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, user, "Role updated successfully"));
+});
+
 export {
   getCurrentUser,
   updateProfile,
   updateProfilePicture,
+  updateUserRole,
   getUserById,
   deleteAccount,
 };

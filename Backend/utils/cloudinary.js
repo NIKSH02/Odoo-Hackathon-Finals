@@ -22,6 +22,7 @@ export const uploadToCloudinary = async (buffer, options = {}) => {
       const uploadOptions = {
         folder: "quickcourt/profile-pictures",
         transformation: [
+          { angle: "exif" }, // Auto-rotate based on EXIF orientation
           { width: 400, height: 400, crop: "fill" },
           { quality: "auto", fetch_format: "auto" },
         ],

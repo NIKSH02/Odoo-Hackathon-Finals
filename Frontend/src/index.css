@@ -48,6 +48,35 @@ body {
   border-color: #6366f1; /* indigo-500 */
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
 }
+
+/* Google Login Button Responsive Styling */
+.google-login-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-login-container > div {
+  width: 100% !important;
+  max-width: 400px;
+}
+
+.google-login-container iframe {
+  width: 100% !important;
+  min-width: 280px !important;
+  max-width: 400px !important;
+}
+
+/* Mobile specific Google button styling */
+@media (max-width: 640px) {
+  .google-login-container > div {
+    max-width: 320px;
+  }
+  
+  .google-login-container iframe {
+    max-width: 320px !important;
+  }
+}
 /* Hide Google Translate feedback popup */
 .goog-tooltip,
 .goog-tooltip:hover,
