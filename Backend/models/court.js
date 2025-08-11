@@ -7,6 +7,11 @@ const courtSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    courtNumber: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
     venue: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Venue",
@@ -134,6 +139,8 @@ courtSchema.index({ venue: 1 });
 courtSchema.index({ sportType: 1 });
 courtSchema.index({ pricePerHour: 1 });
 courtSchema.index({ isActive: 1 });
+// Compound index to ensure unique court numbers per sport type per venue
+courtSchema.index({ venue: 1, sportType: 1, courtNumber: 1 }, { unique: true });
 
 const Court = mongoose.model("Court", courtSchema);
 export default Court;
