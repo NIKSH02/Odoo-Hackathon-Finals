@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { User, MapPin, Calendar, Clock, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
+import { User, MapPin, Calendar, Clock, CheckCircle, XCircle, Eye, EyeOff, Camera, Edit3 } from 'lucide-react';
 import Navbar from './Navbar';
 
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('editProfile');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   
   // State for editable profile data
   const [editableProfileData, setEditableProfileData] = useState({
@@ -66,6 +68,21 @@ const UserProfile = () => {
     }));
   };
 
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+  };
+
   const handleSave = () => {
     // Implement save logic for profile and password here
     console.log('Saving profile data:', editableProfileData);
@@ -95,7 +112,7 @@ const UserProfile = () => {
   return (
     <>
     <Navbar />
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 ">
       {/* Container for sidebar and content */}
       <div className="flex flex-col lg:flex-row">
         {/* Sidebar - Responsive Layout */}
@@ -136,8 +153,14 @@ const UserProfile = () => {
             {/* Profile Header */}
             <div className="p-6 border-b border-gray-200">
               <div className="text-center">
-                <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-                  <User className="w-12 h-12 text-white" />
+                <div className="w-24 h-24 mx-auto mb-4">
+                  <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                    {profileImage ? (
+                      <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-12 h-12 text-white" />
+                    )}
+                  </div>
                 </div>
                 <h3 className="font-bold text-xl text-gray-900 truncate">{editableProfileData.fullName}</h3>
                 <p className="text-gray-600 text-sm mt-1 truncate">{editableProfileData.email}</p>
@@ -183,114 +206,180 @@ const UserProfile = () => {
         <div className="flex-1 w-full">
           <div className="p-4 lg:p-6">
             {activeTab === 'editProfile' && (
-            <div className="bg-white rounded-lg shadow-sm p-4 lg:p-6 max-w-6xl mx-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Edit Profile</h2>
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 max-w-6xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Edit Profile</h2>
+                  <p className="text-gray-600">Update your personal information and account settings</p>
+                </div>
+                <button
+                  onClick={toggleEditMode}
+                  className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>{isEditMode ? 'Cancel Edit' : 'Edit Profile'}</span>
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div className="lg:col-span-1 flex justify-center items-center order-1 lg:order-1">
-                  <div className="w-24 h-24 lg:w-32 lg:h-32 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="w-12 h-12 lg:w-16 lg:h-16 text-gray-400" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                {/* Profile Image Section */}
+                <div className="lg:col-span-1 flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <div className="w-32 h-32 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg overflow-hidden border-4 border-white">
+                      {profileImage ? (
+                        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-16 h-16 text-green-600" />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => document.getElementById('mainImageUpload').click()}
+                      className="absolute bottom-0 right-0 w-10 h-10 bg-green-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors"
+                    >
+                      <Camera className="w-5 h-5 text-white" />
+                    </button>
+                    <input
+                      id="mainImageUpload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-lg text-gray-900">{editableProfileData.fullName}</h3>
+                    <p className="text-gray-500 text-sm">Click camera to upload photo</p>
                   </div>
                 </div>
 
-                <div className="space-y-4 lg:col-span-1 order-2 lg:order-2">
-                  {/* Editable Full Name Field */}
-                  <div>
-                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      id="fullName"
-                      value={editableProfileData.fullName}
-                      onChange={(e) => handleProfileChange('fullName', e.target.value)}
-                      placeholder="Enter your full name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
+                {/* Form Section */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <User className="w-5 h-5 text-green-600" />
+                      Personal Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Full Name Field */}
+                      <div>
+                        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                          Full Name
+                        </label>
+                        <input
+                          type="text"
+                          id="fullName"
+                          value={editableProfileData.fullName}
+                          onChange={(e) => handleProfileChange('fullName', e.target.value)}
+                          disabled={!isEditMode}
+                          placeholder="Enter your full name"
+                          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 ${
+                            isEditMode 
+                              ? 'border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white' 
+                              : 'border-gray-200 bg-gray-50 text-gray-600'
+                          }`}
+                        />
+                      </div>
 
-                  {/* Editable Email Field */}
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={editableProfileData.email}
-                      onChange={(e) => handleProfileChange('email', e.target.value)}
-                      placeholder="Enter your email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-
-                  {/* Old Password Field */}
-                  <div>
-                    <label htmlFor="oldPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      Old Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.oldPassword ? "text" : "password"}
-                        id="oldPassword"
-                        value={passwordData.oldPassword}
-                        onChange={(e) => handlePasswordChange('oldPassword', e.target.value)}
-                        placeholder="Enter your old password"
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('oldPassword')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.oldPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
+                      {/* Email Field */}
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          id="email"
+                          value={editableProfileData.email}
+                          onChange={(e) => handleProfileChange('email', e.target.value)}
+                          disabled={!isEditMode}
+                          placeholder="Enter your email"
+                          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 ${
+                            isEditMode 
+                              ? 'border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white' 
+                              : 'border-gray-200 bg-gray-50 text-gray-600'
+                          }`}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* New Password Field */}
-                  <div>
-                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.newPassword ? "text" : "password"}
-                        id="newPassword"
-                        value={passwordData.newPassword}
-                        onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                        placeholder="Enter your new password"
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('newPassword')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.newPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
+                  {/* Password Section */}
+                  {isEditMode && (
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Eye className="w-5 h-5 text-green-600" />
+                        Change Password
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Old Password Field */}
+                        <div>
+                          <label htmlFor="oldPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                            Current Password
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showPasswords.oldPassword ? "text" : "password"}
+                              id="oldPassword"
+                              value={passwordData.oldPassword}
+                              onChange={(e) => handlePasswordChange('oldPassword', e.target.value)}
+                              placeholder="Enter current password"
+                              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => togglePasswordVisibility('oldPassword')}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showPasswords.oldPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* New Password Field */}
+                        <div>
+                          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                            New Password
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showPasswords.newPassword ? "text" : "password"}
+                              id="newPassword"
+                              value={passwordData.newPassword}
+                              onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                              placeholder="Enter new password"
+                              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => togglePasswordVisibility('newPassword')}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showPasswords.newPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
               
               {/* Action Buttons */}
-              <div className="flex space-x-3 pt-6 justify-center"> {/* Centered buttons */}
-                <button
-                  onClick={handleReset}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors font-medium"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-                >
-                  Save
-                </button>
-              </div>
+              {isEditMode && (
+                <div className="flex flex-col sm:flex-row gap-3 pt-8 justify-center border-t border-gray-200 mt-8">
+                  <button
+                    onClick={handleReset}
+                    className="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-300"
+                  >
+                    Reset Changes
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

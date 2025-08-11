@@ -4,6 +4,8 @@ import { Star, MapPin, ChevronRight } from 'lucide-react';
 
 // Single Venue Card
 const VenueCard = ({ venue }) => (
+
+    
   <div className="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col p-4">
     {/* Image Placeholder */}
     <div className="bg-gray-200 rounded-lg h-40 flex items-center justify-center mb-4">
@@ -46,7 +48,8 @@ const VenueCard = ({ venue }) => (
       </div>
 
       {/* Button */}
-      <div className="mt-auto pt-3">
+      <div className="mt-auto pt-3"
+      >
         <button className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition">
           View Details
         </button>
