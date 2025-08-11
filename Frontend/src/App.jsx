@@ -1,27 +1,27 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import ThemeProvider from './context/ThemeContext';
-import ToastProvider from './context/ToastContext';
-import AuthProvider from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import RoleSelectionModal from './components/RoleSelectionModal';
-import ScrollToTop from './components/ScrollToTop';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import ThemeProvider from "./context/ThemeContext";
+import ToastProvider from "./context/ToastContext";
+import AuthProvider from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import RoleSelectionModal from "./components/RoleSelectionModal";
+import ScrollToTop from "./components/ScrollToTop";
 
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import OTPVerificationPage from './pages/OTPVerificationPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import DashboardPage from './pages/DashboardPage';
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import OTPVerificationPage from "./pages/OTPVerificationPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import DashboardPage from "./pages/DashboardPage";
 
-import GoogleTranslate from './services/GoogleTranslate';
-import SingleVenueDetailsPage from './pages/SingleVenueDetailsPage'
-import VenueBookingPage from './pages/VenueBookingPage'
-import { useAuth } from './hooks/useAuth';
-import SportsVenuesPage from './pages/SportsVenuesPage'
-import UserProfile from './components/UserProfile';
+import GoogleTranslate from "./services/GoogleTranslate";
+import SingleVenueDetailsPage from "./pages/SingleVenueDetailsPage";
+import VenueBookingPage from "./pages/VenueBookingPage";
+import { useAuth } from "./hooks/useAuth";
+import SportsVenuesPage from "./pages/SportsVenuesPage";
+import UserProfile from "./components/UserProfile";
 
 // Inner component that uses the auth context
 const AppContent = () => {
@@ -35,88 +35,91 @@ const AppContent = () => {
         <main>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route 
+            <Route
               path="/venues"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <SportsVenuesPage />
                 </ProtectedRoute>
               }
-            />  
-            <Route 
-              path="/venue/:venueId" 
+            />
+            <Route
+              path="/venue/:venueId"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <SingleVenueDetailsPage />
                 </ProtectedRoute>
               }
-              />
-              <Route path='/venue/:venueId/booking' element={
+            />
+            <Route
+              path="/venue/:venueId/booking"
+              element={
                 <ProtectedRoute requireAuth={true}>
                   <VenueBookingPage />
                 </ProtectedRoute>
-              } />
-            <Route 
-              path="/login" 
+              }
+            />
+            <Route
+              path="/login"
               element={
                 <ProtectedRoute requireAuth={false}>
                   <LoginPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/register" 
+            <Route
+              path="/register"
               element={
                 <ProtectedRoute requireAuth={false}>
                   <RegisterPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/verify-otp" 
+            <Route
+              path="/verify-otp"
               element={
                 <ProtectedRoute requireAuth={false}>
                   <OTPVerificationPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/forgot-password" 
+            <Route
+              path="/forgot-password"
               element={
                 <ProtectedRoute requireAuth={false}>
                   <ForgotPasswordPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/reset-password" 
+            <Route
+              path="/reset-password"
               element={
                 <ProtectedRoute requireAuth={false}>
                   <ResetPasswordPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <DashboardPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-			<Route 
-              path="/profile" 
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <UserProfile />
                 </ProtectedRoute>
-              } 
+              }
             />
           </Routes>
         </main>
-        
+
         {/* Role Selection Modal for Google login users */}
-        <RoleSelectionModal 
+        <RoleSelectionModal
           isOpen={showRoleModal}
           user={user}
           onComplete={closeRoleModal}
