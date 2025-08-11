@@ -13,6 +13,8 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatBox from './components/ChatBox';
 import GoogleTranslate from './services/GoogleTranslate';
+import SingleVenueDetailsPage from './pages/SingleVenueDetailsPage'
+import VenueBookingPage from './pages/VenueBookingPage'
 
 
 
@@ -29,6 +31,8 @@ const App = () => {
                 <main>
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
+                  <Route path="/venue/:id" element={<SingleVenueDetailsPage />} /> 
+                  <Route path="/booking" element={<VenueBookingPage />} /> 
                   <Route 
                     path="/login" 
                     element={
