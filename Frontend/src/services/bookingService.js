@@ -40,12 +40,24 @@ export const getVenueBookingsService = async (venueId, params = {}) => {
   );
 };
 
+// Get venue bookings by specific date
+export const getVenueBookingsByDateService = async (venueId, date) => {
+  const formattedDate =
+    date instanceof Date ? date.toISOString().split("T")[0] : date;
+  return api.get(`/bookings/venue/${venueId}/date/${formattedDate}`);
+};
+
 // Get booking statistics for venue owners
 export const getBookingStatsService = async (venueId, params = {}) => {
   const queryParams = new URLSearchParams(params).toString();
   return api.get(
     `/bookings/venue/${venueId}/stats${queryParams ? `?${queryParams}` : ""}`
   );
+};
+
+// Get bookings for a specific court and date
+export const getCourtBookingsService = async (courtId, date) => {
+  return api.get(`/bookings/court/${courtId}/date/${date}`);
 };
 
 // Process payment for booking

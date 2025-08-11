@@ -17,7 +17,10 @@ import {
   getSportsWithCourtCountsService,
   getCourtAvailabilityBySportService,
 } from "../services/courtService";
-import { createBookingService } from "../services/bookingService";
+import {
+  createBookingService,
+  getVenueBookingsByDateService,
+} from "../services/bookingService";
 
 // Calendar Modal Component
 const CalendarModal = ({ isOpen, onClose, selectedDate, onDateSelect }) => {
@@ -199,7 +202,35 @@ const TimeSlotModal = ({
   selectedTime,
   onTimeSelect,
   selectedDate,
+  venue,
+  selectedSport,
 }) => {
+  const [existingBookings, setExistingBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch existing bookings for the selected date
+  useEffect(() => {
+    if (!isOpen || !selectedDate || !venue?._id) return;
+
+    const fetchBookings = async () => {
+      setLoading(true);
+      try {
+        const response = await getVenueBookingsByDateService(
+          venue._id,
+          selectedDate
+        );
+        setExistingBookings(response?.data?.bookings || []);
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+        setExistingBookings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, [isOpen, selectedDate, venue?._id]);
+
   if (!isOpen) return null;
 
   const generateTimeSlots = () => {
@@ -212,8 +243,32 @@ const TimeSlotModal = ({
       selectedDate.getMonth() === now.getMonth() &&
       selectedDate.getFullYear() === now.getFullYear();
 
-    // Generate slots from 5 AM to 11 PM inclusive
-    for (let hour = 5; hour <= 22; hour++) {
+    // Get operating hours for the selected day
+    const dayNames = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ];
+    const dayName = dayNames[selectedDate?.getDay() || 0];
+    const operatingHours = venue?.operatingHours?.[dayName];
+
+    if (!operatingHours || !operatingHours.isOpen) {
+      return []; // Venue is closed on this day
+    }
+
+    // Parse operating hours
+    const openTime = operatingHours.open; // e.g., "09:00"
+    const closeTime = operatingHours.close; // e.g., "22:00"
+
+    const openHour = parseInt(openTime.split(":")[0]);
+    const closeHour = parseInt(closeTime.split(":")[0]);
+
+    // Generate slots within operating hours
+    for (let hour = openHour; hour < closeHour; hour++) {
       const slotDate = new Date(
         selectedDate ? selectedDate.getFullYear() : now.getFullYear(),
         selectedDate ? selectedDate.getMonth() : now.getMonth(),
@@ -235,8 +290,20 @@ const TimeSlotModal = ({
       // Disable past times if today
       const isPastTime = isToday && slotDate.getTime() <= now.getTime();
 
-      // Demo unavailable times
-      const isUnavailable = [8, 14, 19].includes(hour);
+      // Check if this slot conflicts with existing bookings
+      const isUnavailable = existingBookings.some((booking) => {
+        // Only check bookings for the selected sport if specified
+        if (selectedSport && booking.sport !== selectedSport) return false;
+
+        const bookingStartTime = booking.startTime; // e.g., "09:00"
+        const bookingEndTime = booking.endTime; // e.g., "10:00"
+
+        const bookingStartHour = parseInt(bookingStartTime.split(":")[0]);
+        const bookingEndHour = parseInt(bookingEndTime.split(":")[0]);
+
+        // Check if the current hour slot overlaps with the booking
+        return hour >= bookingStartHour && hour < bookingEndHour;
+      });
 
       slots.push({
         time: displayTime,
@@ -250,6 +317,46 @@ const TimeSlotModal = ({
   };
 
   const timeSlots = generateTimeSlots();
+
+  // If venue is closed on selected day
+  if (timeSlots.length === 0) {
+    const dayNames = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const dayName = dayNames[selectedDate?.getDay() || 0];
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900">Select Time</h3>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-6 text-center">
+            <div className="text-6xl mb-4">🔒</div>
+            <h4 className="text-lg font-bold text-gray-900 mb-2">
+              Venue Closed
+            </h4>
+            <p className="text-gray-600">
+              This venue is closed on {dayName}s. Please select a different
+              date.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -265,33 +372,42 @@ const TimeSlotModal = ({
         </div>
 
         <div className="p-6">
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <p className="text-sm text-gray-600 leading-relaxed">
-              <span className="font-medium">Note:</span> Start time must be in
-              the future.
-              <br />
-              Unavailable slots are shown in gray and cannot be selected.
-            </p>
-          </div>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading available time slots...</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  <span className="font-medium">Note:</span> Start time must be
+                  in the future.
+                  <br />
+                  Unavailable slots are shown in gray and cannot be selected.
+                </p>
+              </div>
 
-          <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2">
-            {timeSlots.map((slot, index) => (
-              <button
-                key={index}
-                onClick={() => !slot.disabled && onTimeSelect(slot.value)}
-                disabled={slot.disabled}
-                className={`p-3 text-sm font-medium rounded-xl border-2 transition-all duration-200 ${
-                  selectedTime === slot.value
-                    ? "bg-black text-white border-black shadow-lg transform scale-105"
-                    : slot.disabled
-                    ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
-                    : "bg-white border-gray-200 hover:border-gray-400 hover:bg-gray-50 hover:shadow-sm"
-                }`}
-              >
-                {slot.time}
-              </button>
-            ))}
-          </div>
+              <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2">
+                {timeSlots.map((slot, index) => (
+                  <button
+                    key={index}
+                    onClick={() => !slot.disabled && onTimeSelect(slot.value)}
+                    disabled={slot.disabled}
+                    className={`p-3 text-sm font-medium rounded-xl border-2 transition-all duration-200 ${
+                      selectedTime === slot.value
+                        ? "bg-black text-white border-black shadow-lg transform scale-105"
+                        : slot.disabled
+                        ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "bg-white border-gray-200 hover:border-gray-400 hover:bg-gray-50 hover:shadow-sm"
+                    }`}
+                  >
+                    {slot.time}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -335,15 +451,25 @@ const VenueBookingPage = () => {
 
         // Fetch venue details
         const venueResponse = await getVenueByIdService(venueId);
-        setVenue(venueResponse.data.data);
+        setVenue(venueResponse.data.data.venue); // Fix: access venue property
 
         // Fetch sports with court counts
         const sportsResponse = await getSportsWithCourtCountsService(venueId);
-        setSportsData(sportsResponse.data.data.sports);
+        setSportsData(
+          sportsResponse.data.data.sports || sportsResponse.data.data
+        );
 
         // Set first sport as default if available
-        if (sportsResponse.data.data.sports.length > 0) {
+        if (
+          sportsResponse.data.data.sports &&
+          sportsResponse.data.data.sports.length > 0
+        ) {
           setSelectedSport(sportsResponse.data.data.sports[0]._id);
+        } else if (
+          sportsResponse.data.data &&
+          sportsResponse.data.data.length > 0
+        ) {
+          setSelectedSport(sportsResponse.data.data[0]._id);
         }
       } catch (err) {
         console.error("Error fetching venue data:", err);
@@ -549,10 +675,10 @@ const VenueBookingPage = () => {
                   <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">
                     <Star size={16} className="text-gray-600 fill-current" />
                     <span className="font-semibold text-gray-800">
-                      {venue.rating?.average || "4.5"}
+                      {venue.rating?.average || "0.0"}
                     </span>
                     <span className="text-gray-500">
-                      ({venue.rating?.count || 0} reviews)
+                      ({venue.rating?.totalReviews || 0} reviews)
                     </span>
                   </div>
                 </div>
@@ -848,6 +974,8 @@ const VenueBookingPage = () => {
           setSelectedCourt(""); // Reset court selection when time changes
         }}
         selectedDate={selectedDate}
+        venue={venue}
+        selectedSport={selectedSport}
       />
     </div>
   );
