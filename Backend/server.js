@@ -6,7 +6,6 @@ import ApiError from './utils/ApiError.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import cookieParser from 'cookie-parser';
-import path from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -30,10 +29,6 @@ app.use(cors({
 
 
 app.use(cookieParser());
-
-// Helper: Log static file serving for debug
-console.log('Serving static files from:', path.resolve('uploads'));
-app.use('/uploads', express.static('uploads'));
 
 // Add debug middleware to log all requests
 app.use((req, res, next) => {
