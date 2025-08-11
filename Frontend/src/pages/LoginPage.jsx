@@ -82,6 +82,27 @@ const LoginPage = () => {
       }
     } catch (err) {
       dismissToast(loadingToast);
+      
+      // Check if user needs email verification
+      if (err.response?.status === 400 && (
+        err.response?.data?.data?.needsVerification || 
+        err.response?.data?.message?.includes('verify') ||
+        err.response?.data?.message?.includes('OTP sent')
+      )) {
+        showError('Please verify your email first.');
+        // Redirect to OTP verification page
+        const emailToUse = err.response?.data?.data?.email || 
+                          (usernameOrEmail.includes('@') ? usernameOrEmail : email);
+        
+        navigate('/verify-otp', { 
+          state: { 
+            email: emailToUse,
+            purpose: 'signup'
+          } 
+        });
+        return;
+      }
+      
       showError(err.response?.data?.message || 'Login failed.');
     }
   };
@@ -224,30 +245,59 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center">
-          <h1 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">Your App</h1>
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
-          Sign in to your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Or{' '}
-          <Link
-            to="/register"
-            className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            create a new account
-          </Link>
-        </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      {/* Desktop Layout - 40/60 Split */}
+      <div className="hidden lg:flex lg:w-2/5 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 opacity-90"></div>
+        <img
+          src="/authpage.jpg"
+          alt="QuickCourt Authentication"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="relative z-10 flex flex-col justify-center px-12 text-white">
+          <h1 className="text-4xl font-bold mb-4">Welcome back to QuickCourt</h1>
+          <p className="text-xl opacity-90">
+            Sign in to access your sports facility bookings and manage your gaming experience.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* Login Method Toggle */}
-          <div className="flex mb-6">
-            <button
+      {/* Main Content Area - 60% on desktop, full width on mobile */}
+      <div className="flex-1 lg:w-3/5 flex flex-col justify-center py-4 px-4 sm:px-6 lg:px-20 min-h-0">
+        <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto">
+          <div className="lg:hidden text-center mb-6">
+            <Link to="/" className="inline-block">
+              <h1 className="text-2xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                QuickCourt
+              </h1>
+            </Link>
+          </div>
+          
+          <Link to="/" className="hidden lg:flex justify-center mb-6">
+            <h1 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+              QuickCourt
+            </h1>
+          </Link>
+          
+          <h2 className="text-center text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            Or{' '}
+            <Link
+              to="/register"
+              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+              create a new account
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-4 lg:mt-8 w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto">
+          <div className="bg-white dark:bg-gray-800 py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-10 shadow sm:rounded-lg">
+            {/* Login Method Toggle */}
+            <div className="flex mb-4 sm:mb-6">
+              <button
               type="button"
               onClick={() => {
                 setLoginMethod('password');
@@ -316,6 +366,14 @@ const LoginPage = () => {
                       className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       placeholder="Enter your password"
                     />
+                  </div>
+                  <div className="mt-2 text-right">
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                    >
+                      Forgot your password?
+                    </Link>
                   </div>
                 </div>
 
@@ -421,17 +479,20 @@ const LoginPage = () => {
           </div>
 
           {/* Google Sign-In Button */}
-          <div className="mt-6 flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleLogin}
-              onError={handleGoogleLoginError}
-              theme="outline"
-              size="large"
-              text="signin_with"
-              shape="rectangular"
-              logo_alignment="left"
-              width={400}
-            />
+          <div className="mt-6">
+            <div className="google-login-container">
+              <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={handleGoogleLoginError}
+                theme="outline"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+                logo_alignment="left"
+                useOneTap={false}
+              />
+            </div>
+          </div>
           </div>
         </div>
       </div>
