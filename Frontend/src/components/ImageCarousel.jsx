@@ -23,11 +23,6 @@ export default function ImageCarousel() {
   
   return (
     <div className="mb-8">
-      <div className="mb-4">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Venue Gallery</h3>
-        <div className="w-8 h-1 bg-black rounded-full"></div>
-      </div>
-
       {/* Main Image Display */}
       <div className="relative bg-gray-900 rounded-2xl overflow-hidden h-64 md:h-80 lg:h-96 mb-6 shadow-2xl group">
         <img 

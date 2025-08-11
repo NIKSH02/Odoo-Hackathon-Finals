@@ -99,7 +99,7 @@ const SingleVenueDetailsPage = () => {
 
           {/* Sidebar - 30% width */}
           <div className="w-full lg:w-[30%] space-y-6">
-            <button className="w-full bg-black text-white py-4 px-6 rounded-2xl font-bold hover:bg-gray-800 transition-all duration-200 shadow-lg mt-18 hover:shadow-xl transform hover:-translate-y-0.5 text-lg">
+            <button className="w-full bg-black text-white py-4 px-6 rounded-2xl font-bold hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-lg">
               📅 Book This Venue
             </button>
             
