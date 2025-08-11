@@ -5,8 +5,7 @@ import ThemeProvider from './context/ThemeContext';
 import ToastProvider from './context/ToastContext';
 import AuthProvider from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import RoleSelectionModal from './components/RoleSelectionModal';
-import ScrollToTop from './components/ScrollToTop';
+
 
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -15,28 +14,24 @@ import OTPVerificationPage from './pages/OTPVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
+import SportsVenuesPage from './pages/SportsVenuesPage';
 import UserProfile from './components/UserProfile';
 
 import GoogleTranslate from './services/GoogleTranslate';
-import { useAuth } from './hooks/useAuth';
 
-// Inner component that uses the auth context
-const AppContent = () => {
-  const { user, showRoleModal, closeRoleModal } = useAuth();
-
+const App = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <ThemeProvider>
         <ToastProvider>
-
           <AuthProvider>
             <Router>
-              <ScrollToTop />
               <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 ease-in-out font-inter">
                 <GoogleTranslate />
                 <main>
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
+                  <Route path="/venues" element={<SportsVenuesPage />} />
                   <Route 
                     path="/login" 
                     element={
@@ -50,6 +45,30 @@ const AppContent = () => {
                     element={
                       <ProtectedRoute requireAuth={false}>
                         <RegisterPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/otp-verification" 
+                    element={
+                      <ProtectedRoute requireAuth={false}>
+                        <OTPVerificationPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/forgot-password" 
+                    element={
+                      <ProtectedRoute requireAuth={false}>
+                        <ForgotPasswordPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/reset-password" 
+                    element={
+                      <ProtectedRoute requireAuth={false}>
+                        <ResetPasswordPage />
                       </ProtectedRoute>
                     } 
                   />

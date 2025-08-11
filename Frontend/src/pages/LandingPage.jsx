@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import VenueBookingSection from '../components/VenueBookingSection';
 
 
+
 const LandingPage = () => {
   const navigate = useNavigate();
 
@@ -25,8 +26,8 @@ const LandingPage = () => {
         onOpenSignUpModal={handleOpenSignUpModal}
         onOpenLoginModal={handleOpenLoginModal}
       />
-      <VenueBookingSection />
-     
+      
+     <VenueBookingSection />
     
            <Footer />
     </>
