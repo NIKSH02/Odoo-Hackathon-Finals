@@ -98,37 +98,43 @@ const SingleVenueDetailsPage = () => {
   const [error, setError] = useState(null);
   const [showWeeklyCalendar, setShowWeeklyCalendar] = useState(false);
 
-  useEffect(() => {
-    const fetchVenueData = async () => {
+  const fetchVenueData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch venue details
+      const venueResponse = await getVenueByIdService(venueId);
+      setVenue(venueResponse.data.data.venue);
+
+      // Fetch sports with court counts - try both new and old response structure
       try {
-        setLoading(true);
-
-        // Fetch venue details
-        const venueResponse = await getVenueByIdService(venueId);
-        setVenue(venueResponse.data.data.venue);
-
-        // Fetch sports with court counts - try both new and old response structure
-        try {
-          const sportsResponse = await getSportsWithCourtCountsService(venueId);
-          setSportsData(
-            sportsResponse.data.data.sports || sportsResponse.data.data
-          );
-        } catch (sportErr) {
-          console.warn("Could not fetch sports data:", sportErr);
-          // Fallback: use venue's courts data if available
-          if (venueResponse.data.data.courts) {
-            const courtsData = venueResponse.data.data.courts;
-            setSportsData(courtsData);
-          }
+        const sportsResponse = await getSportsWithCourtCountsService(venueId);
+        setSportsData(
+          sportsResponse.data.data.sports || sportsResponse.data.data
+        );
+      } catch (sportErr) {
+        console.warn("Could not fetch sports data:", sportErr);
+        // Fallback: use venue's courts data if available
+        if (venueResponse.data.data.courts) {
+          const courtsData = venueResponse.data.data.courts;
+          setSportsData(courtsData);
         }
-      } catch (err) {
-        console.error("Error fetching venue data:", err);
-        setError(err.response?.data?.message || "Failed to fetch venue data");
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching venue data:", err);
+      setError(err.response?.data?.message || "Failed to fetch venue data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Callback to refresh venue data when a review is added
+  const handleReviewAdded = () => {
+    // Refresh venue data to get updated rating
+    fetchVenueData();
+  };
+
+  useEffect(() => {
     if (venueId) {
       fetchVenueData();
     }
@@ -408,10 +414,10 @@ const SingleVenueDetailsPage = () => {
                   <Star size={18} className="fill-black text-black" />
                 </div>
                 <span className="font-bold text-gray-900">
-                  {venue.rating?.average || "4.5"}
+                  {venue.rating?.average || "0.0"}
                 </span>
                 <span className="text-gray-500">
-                  ({venue.rating?.count || 0} reviews)
+                  ({venue.rating?.totalReviews || 0} reviews)
                 </span>
               </div>
             </div>
@@ -500,7 +506,7 @@ const SingleVenueDetailsPage = () => {
           <SportsAvailable sportsData={sportsData} />
           <Amenities amenities={venue.amenities} />
           <AboutVenue venue={venue} />
-          <VenueReviews venueId={venueId} />
+          <VenueReviews venueId={venueId} onReviewAdded={handleReviewAdded} />
         </div>
       </div>
 
