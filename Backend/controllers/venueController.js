@@ -99,25 +99,70 @@ const getVenueById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Venue not found");
   }
 
-  // Get courts for this venue
-  const courts = await Court.find({ venue: venueId, isActive: true }).select(
-    "-__v"
-  );
+  // Get courts for this venue with more detailed information
+  const courts = await Court.find({ venue: venueId, isActive: true })
+    .select("-__v")
+    .populate("venue", "name");
 
-  // Get recent reviews
+  // Group courts by sport for better organization
+  const courtsBySport = courts.reduce((acc, court) => {
+    const sport = court.sport;
+    if (!acc[sport]) {
+      acc[sport] = [];
+    }
+    acc[sport].push({
+      _id: court._id,
+      name: court.name,
+      features: court.features,
+      pricePerHour: court.pricePerHour,
+      isActive: court.isActive,
+      courtType: court.courtType,
+      description: court.description,
+    });
+    return acc;
+  }, {});
+
+  // Get recent reviews with rating breakdown
   const reviews = await Review.find({ venue: venueId })
     .populate("user", "fullName profilePicture")
     .sort({ createdAt: -1 })
     .limit(10)
     .select("-__v");
 
+  // Calculate rating breakdown
+  const ratingBreakdown = await Review.aggregate([
+    { $match: { venue: venue._id } },
+    {
+      $group: {
+        _id: "$rating",
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: -1 } },
+  ]);
+
+  // Ensure photos are properly formatted
+  const formattedVenue = {
+    ...venue.toObject(),
+    photos: venue.photos.map((photo) => ({
+      url: photo.url,
+      caption: photo.caption || "Venue Photo",
+      isMainPhoto: photo.isMainPhoto || false,
+      _id: photo._id,
+    })),
+  };
+
   res.status(200).json(
     new ApiResponse(
       200,
       {
-        venue,
+        venue: formattedVenue,
         courts,
+        courtsBySport,
         reviews,
+        ratingBreakdown,
+        totalCourts: courts.length,
+        availableSports: Object.keys(courtsBySport),
       },
       "Venue details fetched successfully"
     )

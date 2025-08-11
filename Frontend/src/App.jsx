@@ -44,7 +44,7 @@ const AppContent = () => {
               }
             />
             <Route
-              path="/venue/:venueId"
+              path="/venue/:id"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <SingleVenueDetailsPage />
@@ -52,7 +52,7 @@ const AppContent = () => {
               }
             />
             <Route
-              path="/venue/:venueId/booking"
+              path="/venue/:id/booking"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <VenueBookingPage />
