@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, Trash2, Clock, Users, Ruler, Settings, Save, X, Menu } from 'lucide-react';
 import OwnerSidebar from '../components/OwnerSidebar';
-import courtService from '../services/courtService';
-import venueService from '../services/venueService';
 
 const CourtManagement = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -37,9 +35,24 @@ const CourtManagement = () => {
     }
   });
 
-  // Get sports and features options from service
-  const sportsOptions = courtService.getSportsOptions();
-  const featuresOptions = courtService.getFeaturesOptions();
+  // Static sports and features options
+  const sportsOptions = [
+    { value: 'badminton', label: 'Badminton' },
+    { value: 'tennis', label: 'Tennis' },
+    { value: 'football', label: 'Football' },
+    { value: 'basketball', label: 'Basketball' },
+    { value: 'cricket', label: 'Cricket' },
+    { value: 'volleyball', label: 'Volleyball' },
+    { value: 'table_tennis', label: 'Table Tennis' }
+  ];
+  const featuresOptions = [
+    { value: 'indoor', label: 'Indoor' },
+    { value: 'outdoor', label: 'Outdoor' },
+    { value: 'air_conditioned', label: 'Air Conditioned' },
+    { value: 'floodlights', label: 'Floodlights' },
+    { value: 'sound_system', label: 'Sound System' },
+    { value: 'spectator_seating', label: 'Spectator Seating' }
+  ];
   const equipmentOptions = [
     { value: 'rackets', label: 'Rackets' },
     { value: 'balls', label: 'Balls' },
@@ -50,7 +63,7 @@ const CourtManagement = () => {
   ];
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
-  // Load data
+  // Load static data
   useEffect(() => {
     loadData();
   }, []);
@@ -60,39 +73,41 @@ const CourtManagement = () => {
       setLoading(true);
       setError(null);
       
-      // Load venues owned by the user
-      try {
-        const venuesResponse = await venueService.getOwnerVenues();
-        if (venuesResponse?.success && venuesResponse?.data) {
-          setVenues(venuesResponse.data);
-        }
-      } catch (venueError) {
-        console.error('Error loading venues:', venueError);
-        // Provide sample venues as fallback
-        const sampleVenues = [
-          { _id: 'sample-1', name: 'Sample Sports Complex' },
-          { _id: 'sample-2', name: 'Demo Venue' }
-        ];
-        setVenues(sampleVenues);
-      }
+      // Static sample venues
+      const sampleVenues = [
+        { _id: 'sample-1', name: 'Sample Sports Complex' },
+        { _id: 'sample-2', name: 'Demo Venue' }
+      ];
+      setVenues(sampleVenues);
 
-      // Load courts owned by the user
-      try {
-        const courtsResponse = await courtService.getOwnerCourts();
-        if (courtsResponse?.success && courtsResponse?.data?.courts) {
-          const transformedCourts = courtsResponse.data.courts.map(court => 
-            courtService.transformCourtDataForFrontend(court)
-          );
-          setCourts(transformedCourts);
+      // Static sample courts for display
+      const sampleCourts = [
+        {
+          _id: 'court-1',
+          name: 'Badminton Court 1',
+          venue: 'sample-1',
+          sportType: 'badminton',
+          pricePerHour: 300,
+          capacity: 4,
+          isActive: true,
+          totalBookings: 45,
+          totalRevenue: 13500
+        },
+        {
+          _id: 'court-2',
+          name: 'Tennis Court 1',
+          venue: 'sample-1',
+          sportType: 'tennis',
+          pricePerHour: 500,
+          capacity: 2,
+          isActive: true,
+          totalBookings: 32,
+          totalRevenue: 16000
         }
-      } catch (courtError) {
-        console.error('Error loading courts:', courtError);
-        // Set empty courts if API fails - this allows the user to add new courts
-        setCourts([]);
-      }
+      ];
+      setCourts(sampleCourts);
     } catch (error) {
       console.error('Error loading data:', error);
-      // Don't show error to user - just log it and continue with empty state
     } finally {
       setLoading(false);
     }
@@ -181,28 +196,21 @@ const CourtManagement = () => {
       setError(null);
 
       if (editingCourt) {
-        // Update existing court
-        try {
-          const response = await courtService.updateCourt(editingCourt._id, formData);
-          console.log('Update court response:', response);
-          
-          if (response?.success) {
-            const transformedCourt = courtService.transformCourtDataForFrontend(response.data);
-            setCourts(prev => prev.map(court => 
-              court._id === editingCourt._id ? transformedCourt : court
-            ));
-            setIsEditModalOpen(false);
-            setEditingCourt(null);
-            setSuccessMessage('Court updated successfully in database!');
-            setTimeout(() => setSuccessMessage(null), 3000);
-          } else {
-            throw new Error('Invalid response from server');
-          }
-        } catch (updateError) {
-          console.error('Error updating court:', updateError);
-          const errorMessage = updateError.response?.data?.message || 'Failed to update court. Please check your connection and try again.';
-          setError(errorMessage);
-        }
+        // Update existing court (local only)
+        const updatedCourt = {
+          ...editingCourt,
+          ...formData,
+          pricePerHour: Number(formData.pricePerHour),
+          capacity: Number(formData.capacity)
+        };
+        
+        setCourts(prev => prev.map(court => 
+          court._id === editingCourt._id ? updatedCourt : court
+        ));
+        setIsEditModalOpen(false);
+        setEditingCourt(null);
+        setSuccessMessage('Court updated successfully!');
+        setTimeout(() => setSuccessMessage(null), 3000);
       }
       resetForm();
     } catch (error) {
@@ -225,20 +233,11 @@ const CourtManagement = () => {
         setLoading(true);
         setError(null);
         
-        try {
-          const response = await courtService.deleteCourt(courtId);
-          if (response?.success) {
-            setCourts(prev => prev.filter(court => court._id !== courtId));
-            setSuccessMessage('Court deleted successfully!');
-            setTimeout(() => setSuccessMessage(null), 3000);
-          }
-        } catch (deleteError) {
-          console.error('Error deleting court:', deleteError);
-          // For now, delete locally even if API fails
-          setCourts(prev => prev.filter(court => court._id !== courtId));
-          setSuccessMessage('Court deleted locally! (Note: Server deletion will happen when connection is restored)');
-          setTimeout(() => setSuccessMessage(null), 5000);
-        }
+        // Delete locally only
+        setCourts(prev => prev.filter(court => court._id !== courtId));
+        setSuccessMessage('Court deleted successfully!');
+        setTimeout(() => setSuccessMessage(null), 3000);
+        
       } catch (error) {
         console.error('Error deleting court:', error);
         setError('Failed to delete court. Please try again.');

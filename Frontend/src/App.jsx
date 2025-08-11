@@ -7,6 +7,7 @@ import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleSelectionModal from "./components/RoleSelectionModal";
 import ScrollToTop from "./components/ScrollToTop";
+import Navbar from "./components/Navbar";
 
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -14,6 +15,7 @@ import RegisterPage from './pages/RegisterPage';
 import OTPVerificationPage from './pages/OTPVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AboutPage from './pages/AboutPage';
 
 import GoogleTranslate from "./services/GoogleTranslate";
 import SingleVenueDetailsPage from "./pages/SingleVenueDetailsPage";
@@ -37,9 +39,11 @@ const AppContent = () => {
       <ScrollToTop />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 ease-in-out font-inter">
         <GoogleTranslate />
+        <Navbar />
         <main>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route
               path="/venues"
               element={
@@ -111,54 +115,6 @@ const AppContent = () => {
                   <UserProfile />
                 </ProtectedRoute>
               }
-            />
-            <Route 
-              path="/facility-management" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <FacilityManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/facility-owner-dashboard" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <FacilityOwnerDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/booking-overview" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <BookingOverview />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/owner-profile" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <OwnerProfile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/time-slot-management" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <TimeSlotManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/court-management" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <CourtManagement />
-                </ProtectedRoute>
-              } 
             />
             <Route 
               path="/facility-management" 

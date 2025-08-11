@@ -16,8 +16,6 @@ import {
   AlertCircle
 } from 'lucide-react';
 import OwnerSidebar from '../components/OwnerSidebar';
-import venueService from '../services/venueService';
-import courtService from '../services/courtService';
 // import { useAuth } from '../hooks/useAuth'; // Currently unused but may be needed for user authentication
 
 // Facility Modal Component (moved outside to prevent re-creation)
@@ -699,45 +697,72 @@ const FacilityManagement = () => {
   const amenityOptions = ['parking', 'washroom', 'drinking_water', 'changing_room', 'equipment_rental', 'cafeteria', 'ac', 'lighting'];
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
-  // Load owner's venues from backend
+  // Load static sample venues
   useEffect(() => {
     const loadOwnerVenues = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await venueService.getOwnerVenues();
         
-        if (response.success) {
-          const venues = response.data.venues || [];
-          setVenues(venues);
-          
-          // Load courts for each approved venue
-          try {
-            const courts = await courtService.getOwnerCourts();
-            
-            // Group courts by venue
-            const courtsByVenue = courts.reduce((acc, court) => {
-              const venueId = court.venue;
-              if (!acc[venueId]) acc[venueId] = [];
-              acc[venueId].push(court);
-              return acc;
-            }, {});
-            
-            // Update venues with their courts
-            setVenues(prev => prev.map(venue => ({
-              ...venue,
-              courts: courtsByVenue[venue._id] || []
-            })));
-            
-          } catch (courtError) {
-            console.error('Error loading courts:', courtError);
-            // Don't show error for courts, just continue without them
+        // Static sample venues with courts
+        const sampleVenues = [
+          {
+            _id: 'venue-1',
+            name: 'Elite Sports Complex',
+            status: 'approved',
+            description: 'Premium sports facility with modern amenities',
+            address: {
+              street: '123 Sports Avenue',
+              city: 'Mumbai',
+              state: 'Maharashtra',
+              zipCode: '400001'
+            },
+            sportsSupported: ['badminton', 'tennis', 'basketball'],
+            amenities: ['parking', 'washroom', 'cafeteria'],
+            startingPrice: 500,
+            totalBookings: 45,
+            totalEarnings: 22500,
+            courts: [
+              {
+                _id: 'court-1',
+                name: 'Badminton Court A',
+                sportType: 'badminton',
+                pricePerHour: 300,
+                capacity: 4
+              },
+              {
+                _id: 'court-2',
+                name: 'Tennis Court 1',
+                sportType: 'tennis',
+                pricePerHour: 500,
+                capacity: 2
+              }
+            ]
+          },
+          {
+            _id: 'venue-2',
+            name: 'Community Sports Center',
+            status: 'pending_approval',
+            description: 'Local community sports facility',
+            address: {
+              street: '456 Community Road',
+              city: 'Mumbai',
+              state: 'Maharashtra',
+              zipCode: '400002'
+            },
+            sportsSupported: ['football', 'cricket'],
+            amenities: ['parking', 'washroom'],
+            startingPrice: 300,
+            totalBookings: 0,
+            totalEarnings: 0,
+            courts: []
           }
-        }
+        ];
+        
+        setVenues(sampleVenues);
       } catch (error) {
         console.error('Error loading venues:', error);
         setError(error.message || 'Failed to load venues');
-        // Fallback to empty array for development
         setVenues([]);
       } finally {
         setIsLoading(false);
@@ -923,20 +948,24 @@ const FacilityManagement = () => {
             .map(photo => photo.file)
         };
 
-        const response = await venueService.updateVenue(editingVenue._id, updateData);
+        // Update venue locally
+        const updatedVenue = {
+          ...editingVenue,
+          ...updateData,
+          _id: editingVenue._id
+        };
         
-        if (response.success) {
-          // Update venues list with updated venue
-          setVenues(prev => prev.map(venue => 
-            venue._id === editingVenue._id ? response.data : venue
-          ));
-          setIsEditModalOpen(false);
-          setEditingVenue(null);
-          alert('Venue updated successfully!');
-        }
+        // Update venues list with updated venue
+        setVenues(prev => prev.map(venue => 
+          venue._id === editingVenue._id ? updatedVenue : venue
+        ));
+        setIsEditModalOpen(false);
+        setEditingVenue(null);
+        alert('Venue updated successfully!');
       } else {
-        // Create new venue request
-        const venueData = {
+        // Create new venue locally
+        const newVenue = {
+          _id: `venue-${Date.now()}`, // Generate temporary ID
           name: formData.name.trim(),
           description: formData.description.trim(),
           address: {
@@ -950,19 +979,18 @@ const FacilityManagement = () => {
           amenities: formData.amenities,
           startingPrice: Number(formData.startingPrice),
           operatingHours: formData.operatingHours,
-          photos: formData.photos.map(photo => photo.file).filter(Boolean)
+          status: 'pending_approval',
+          totalBookings: 0,
+          totalEarnings: 0,
+          courts: []
         };
 
-        console.log('Sending venue data:', venueData); // Debug log
+        console.log('Creating venue locally:', newVenue); // Debug log
 
-        const response = await venueService.createVenue(venueData);
-        
-        if (response.success) {
-          // Add new venue to list (it will have status 'pending')
-          setVenues(prev => [...prev, response.data]);
-          setIsAddModalOpen(false);
-          alert('Venue request submitted successfully! It will be reviewed by admin.');
-        }
+        // Add new venue to list
+        setVenues(prev => [...prev, newVenue]);
+        setIsAddModalOpen(false);
+        alert('Venue created successfully! (Local storage only)');
       }
     } catch (error) {
       console.error('Error saving venue:', error);
@@ -1015,8 +1043,12 @@ const FacilityManagement = () => {
   const handleCourtSave = async () => {
     try {
       if (editingCourt) {
-        // Update existing court
-        const updatedCourt = await courtService.updateCourt(editingCourt._id, courtFormData);
+        // Update existing court locally
+        const updatedCourt = {
+          ...editingCourt,
+          ...courtFormData,
+          _id: editingCourt._id
+        };
         
         // Update local venues state with the updated court
         setVenues(prev => prev.map(venue => ({
@@ -1029,13 +1061,12 @@ const FacilityManagement = () => {
         console.log('Court updated successfully:', updatedCourt);
         
       } else {
-        // Create new court
-        const courtData = {
+        // Create new court locally
+        const newCourt = {
+          _id: `court-${Date.now()}`, // Generate temporary ID
           ...courtFormData,
           venue: selectedVenueForCourts._id
         };
-
-        const newCourt = await courtService.createCourt(courtData);
         
         // Update local venues state with the new court
         setVenues(prev => prev.map(venue => 
@@ -1079,9 +1110,7 @@ const FacilityManagement = () => {
   // Delete court function
   const handleDeleteCourt = async (courtId) => {
     try {
-      await courtService.deleteCourt(courtId);
-      
-      // Remove court from local venues state
+      // Remove court from local venues state only
       setVenues(prev => prev.map(venue => ({
         ...venue,
         courts: venue.courts?.filter(court => court._id !== courtId) || []

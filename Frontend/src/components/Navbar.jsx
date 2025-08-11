@@ -17,7 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 // --- Navbar Component ---
 
-const Navbar = ({ onNavigate }) => {
+const Navbar = ({ onOpenSignUpModal, onOpenLoginModal }) => {
   const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -27,25 +27,26 @@ const Navbar = ({ onNavigate }) => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const handleNavLinkClick = (page) => {
-    if (onNavigate) {
-      onNavigate(page);
-    }
-    setIsMobileMenuOpen(false);
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
   const handleSignUp = () => {
-    navigate('/register');
+    if (onOpenSignUpModal) {
+      onOpenSignUpModal();
+    } else {
+      navigate('/register');
+    }
     setIsMobileMenuOpen(false);
   };
 
   const handleLogin = () => {
-    navigate('/login');
+    if (onOpenLoginModal) {
+      onOpenLoginModal();
+    } else {
+      navigate('/login');
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -76,13 +77,17 @@ const Navbar = ({ onNavigate }) => {
               Home
             </Link>
             
-            <button 
-              onClick={() => handleNavLinkClick('about')} 
+            <Link 
+              to="/about"
+              onClick={() => {
+                console.log('About link clicked');
+                setIsMobileMenuOpen(false);
+              }}
               className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-xl transition-all duration-300 font-medium group"
             >
               <InformationCircleIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
               About
-            </button>
+            </Link>
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
@@ -200,13 +205,17 @@ const Navbar = ({ onNavigate }) => {
                 Home
               </Link>
               
-              <button 
-                onClick={() => { handleNavLinkClick('about'); setIsMobileMenuOpen(false); }}
+              <Link 
+                to="/about" 
+                onClick={() => {
+                  console.log('Mobile About link clicked');
+                  setIsMobileMenuOpen(false);
+                }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-300 font-medium text-left"
               >
                 <InformationCircleIcon className="w-5 h-5" />
                 About
-              </button>
+              </Link>
 
               {isAuthenticated ? (
                 <>
