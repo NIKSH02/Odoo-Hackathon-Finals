@@ -130,53 +130,67 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             />
-            <Route 
-              path="/facility-management" 
+
+            {/* Booking confirmation redirect to profile */}
+            <Route
+              path="/booking-confirmation/:bookingId"
+              element={<Navigate to="/profile?tab=bookings" replace />}
+            />
+
+            <Route
+              path="/facility-management"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute
+                  requireAuth={true}
+                  requiredRole="facility_owner"
+                >
                   <FacilityManagement />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/facility-owner-dashboard" 
+            <Route
+              path="/facility-owner-dashboard"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute
+                  requireAuth={true}
+                  requiredRole="facility_owner"
+                >
                   <FacilityOwnerDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/booking-overview" 
+            <Route
+              path="/booking-overview"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute
+                  requireAuth={true}
+                  requiredRole="facility_owner"
+                >
                   <BookingOverview />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/owner-profile" 
+            <Route
+              path="/time-slot-management"
               element={
-                <ProtectedRoute requireAuth={true}>
-                  <OwnerProfile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/time-slot-management" 
-              element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute
+                  requireAuth={true}
+                  requiredRole="facility_owner"
+                >
                   <TimeSlotManagement />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/court-management" 
+            <Route
+              path="/court-management"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute
+                  requireAuth={true}
+                  requiredRole="facility_owner"
+                >
                   <CourtManagement />
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route
               path="/owner-profile"
