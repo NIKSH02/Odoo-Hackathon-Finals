@@ -1,26 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar, Clock, Plus, Minus, X } from 'lucide-react';
 
-// Header Component
-const Header = () => {
-  return (
-    <header className="bg-white border-b border-gray-200 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="text-xl font-bold">QUICKCOURT</div>
-        <div className="flex items-center gap-4">
-          <button className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2">
-            📱 Book
-          </button>
-          <button className="text-gray-600 text-sm flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs">👤</div>
-            Mitchell Admin
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-};
-
 // Calendar Modal Component
 const CalendarModal = ({ isOpen, onClose, selectedDate, onDateSelect }) => {
   if (!isOpen) return null;
@@ -171,30 +151,44 @@ const TimeSlotModal = ({ isOpen, onClose, selectedTime, onTimeSelect, selectedDa
   const generateTimeSlots = () => {
     const slots = [];
     const now = new Date();
-    const isToday = selectedDate && 
-      selectedDate.getDate() === now.getDate() && 
-      selectedDate.getMonth() === now.getMonth() && 
+
+    const isToday =
+      selectedDate &&
+      selectedDate.getDate() === now.getDate() &&
+      selectedDate.getMonth() === now.getMonth() &&
       selectedDate.getFullYear() === now.getFullYear();
 
-    // Generate slots from 5 AM to 11 PM (23 hours)
-    for (let hour = 5; hour < 23; hour++) {
-      const displayTime = hour < 12 ? 
-        (hour === 0 ? '12:00 AM' : `${hour.toString().padStart(2, '0')}:00 AM`) : 
-        (hour === 12 ? '12:00 PM' : `${(hour - 12).toString().padStart(2, '0')}:00 PM`);
-      
-      // Disable past times if selecting today
-      const isDisabled = isToday && hour <= now.getHours();
-      
-      // Some slots are marked as unavailable (demo purposes)
-      const isUnavailable = hour === 8 || hour === 14 || hour === 19;
-      
+    // Generate slots from 5 AM to 11 PM inclusive
+    for (let hour = 5; hour <= 22; hour++) {
+      const slotDate = new Date(
+        selectedDate ? selectedDate.getFullYear() : now.getFullYear(),
+        selectedDate ? selectedDate.getMonth() : now.getMonth(),
+        selectedDate ? selectedDate.getDate() : now.getDate(),
+        hour,
+        0,
+        0,
+        0
+      );
+
+      // Format display time in 12-hour clock
+      let displayHour = hour % 12 || 12;
+      let ampm = hour < 12 ? 'AM' : 'PM';
+      const displayTime = `${displayHour}:00 ${ampm}`;
+
+      // Disable past times if today
+      const isPastTime = isToday && slotDate.getTime() <= now.getTime();
+
+      // Demo unavailable times
+      const isUnavailable = [8, 14, 19].includes(hour);
+
       slots.push({
         time: displayTime,
-        value: displayTime,
-        disabled: isDisabled || isUnavailable,
-        reason: isDisabled ? 'Past time' : isUnavailable ? 'Unavailable' : null
+        value: slotDate,
+        disabled: isPastTime || isUnavailable,
+        reason: isPastTime ? 'Past time' : isUnavailable ? 'Unavailable' : null
       });
     }
+
     return slots;
   };
 
@@ -277,14 +271,13 @@ const VenueBookingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-8">Court Booking</h1>
         
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Booking Form - Left Side */}
-          <div className="w-full lg:w-[60%]">
+        <div className="flex justify-center">
+          {/* Main Booking Form - Centered */}
+          <div className="w-full max-w-2xl">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               {/* Venue Info */}
               <div className="mb-6">
@@ -431,88 +424,6 @@ const VenueBookingPage = () => {
                 <button className="w-full bg-green-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-600 transition-colors text-lg">
                   Continue to Payment - ₹{totalPrice.toFixed(2)}
                 </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Calendar and Time Slots Preview */}
-          <div className="w-full lg:w-[40%]">
-            <div className="space-y-4">
-              {/* Calendar Preview */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold">May 2025</h3>
-                  <div className="flex gap-1">
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Mini Calendar */}
-                <div className="grid grid-cols-7 gap-1 text-xs">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center py-1 text-gray-500 font-medium">
-                      {day}
-                    </div>
-                  ))}
-                  
-                  {/* Calendar days - simplified for demo */}
-                  {Array.from({ length: 35 }, (_, i) => {
-                    const day = i - 3; // Adjust for May 1st starting position
-                    const isValidDay = day > 0 && day <= 31;
-                    const isSelected = day === (selectedDate?.getDate() || 6);
-                    
-                    return (
-                      <div key={i} className="aspect-square flex items-center justify-center">
-                        {isValidDay && (
-                          <button 
-                            className={`w-6 h-6 text-xs rounded-full flex items-center justify-center ${
-                              isSelected 
-                                ? 'bg-green-500 text-white' 
-                                : 'hover:bg-gray-100'
-                            }`}
-                          >
-                            {day}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <p className="text-xs text-gray-500 mt-3">
-                  The selected date must be today or later
-                </p>
-              </div>
-
-              {/* Time Slots Preview */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-3">Start time must be in the future</h3>
-                <p className="text-xs text-gray-500 mb-3">
-                  Unavailable time slots are disabled and cannot be selected
-                </p>
-                
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {['05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM'].map((time, i) => (
-                    <button
-                      key={time}
-                      className={`p-2 rounded border text-center ${
-                        time === '05:00 PM' 
-                          ? 'bg-green-500 text-white border-green-500'
-                          : i === 2 || i === 4
-                          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      disabled={i === 2 || i === 4}
-                    >
-                      {time}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
