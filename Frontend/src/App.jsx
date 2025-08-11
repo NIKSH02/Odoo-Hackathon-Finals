@@ -22,6 +22,12 @@ import VenueBookingPage from './pages/VenueBookingPage'
 import { useAuth } from './hooks/useAuth';
 import SportsVenuesPage from './pages/SportsVenuesPage'
 import UserProfile from './components/UserProfile';
+import FacilityManagement from './pages/FacilityManagement';
+import FacilityOwnerDashboard from './pages/FacilityOwnerDashboard';
+import BookingOverview from './pages/BookingOverview';
+import OwnerProfile from './pages/OwnerProfile';
+import TimeSlotManagement from './pages/TimeSlotManagement';
+import CourtManagement from './pages/CourtManagement';
 
 // Inner component that uses the auth context
 const AppContent = () => {
@@ -109,6 +115,54 @@ const AppContent = () => {
               element={
                 <ProtectedRoute requireAuth={true}>
                   <UserProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/facility-management" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <FacilityManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/facility-owner-dashboard" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <FacilityOwnerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/booking-overview" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <BookingOverview />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/owner-profile" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <OwnerProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/time-slot-management" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <TimeSlotManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/court-management" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <CourtManagement />
                 </ProtectedRoute>
               } 
             />
