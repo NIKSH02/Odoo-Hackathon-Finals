@@ -14,7 +14,7 @@ import RegisterPage from './pages/RegisterPage';
 import OTPVerificationPage from './pages/OTPVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import DashboardPage from './pages/DashboardPage';
+// import DashboardPage from './pages/DashboardPage';
 import AdminDashboard from './pages/AdminDashboard';
 
 import GoogleTranslate from "./services/GoogleTranslate";
