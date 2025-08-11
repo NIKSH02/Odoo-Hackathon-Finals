@@ -526,6 +526,35 @@ const CourtModal = ({ isOpen, onClose, courtData, onSave, isEditing }) => {
         ...prev,
         [arrayName]: equipmentObjects,
       }));
+    } else if (arrayName === "features") {
+      // Map user-friendly feature names to backend enum values
+      const featureMapping = {
+        "air conditioning": "air_conditioned",
+        ac: "air_conditioned",
+        "air conditioned": "air_conditioned",
+        "air-conditioned": "air_conditioned",
+        indoor: "indoor",
+        outdoor: "outdoor",
+        floodlights: "floodlights",
+        "flood lights": "floodlights",
+        "synthetic turf": "synthetic_turf",
+        "artificial turf": "synthetic_turf",
+        "wooden floor": "wooden_floor",
+        "wood floor": "wooden_floor",
+        concrete: "concrete",
+        "concrete floor": "concrete",
+      };
+
+      const features = value
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter((item) => item)
+        .map((feature) => featureMapping[feature] || feature);
+
+      setCourtFormData((prev) => ({
+        ...prev,
+        [arrayName]: features,
+      }));
     } else {
       // Handle other arrays as simple strings
       const values = value
@@ -537,6 +566,73 @@ const CourtModal = ({ isOpen, onClose, courtData, onSave, isEditing }) => {
         [arrayName]: values,
       }));
     }
+  };
+
+  // Helper function to convert backend enum values to user-friendly names for display
+  const formatFeaturesForDisplay = (features) => {
+    const displayMapping = {
+      air_conditioned: "Air Conditioning",
+      indoor: "Indoor",
+      outdoor: "Outdoor",
+      floodlights: "Floodlights",
+      synthetic_turf: "Synthetic Turf",
+      wooden_floor: "Wooden Floor",
+      concrete: "Concrete",
+    };
+
+    return features
+      .map((feature) => displayMapping[feature] || feature)
+      .join(", ");
+  };
+
+  // Available feature options for dropdown
+  const featureOptions = [
+    { value: "indoor", label: "Indoor" },
+    { value: "outdoor", label: "Outdoor" },
+    { value: "air_conditioned", label: "Air Conditioning" },
+    { value: "floodlights", label: "Floodlights" },
+    { value: "synthetic_turf", label: "Synthetic Turf" },
+    { value: "wooden_floor", label: "Wooden Floor" },
+    { value: "concrete", label: "Concrete" },
+  ];
+
+  // Available sport type options for dropdown
+  const sportTypeOptions = [
+    { value: "badminton", label: "Badminton" },
+    { value: "tennis", label: "Tennis" },
+    { value: "football", label: "Football" },
+    { value: "basketball", label: "Basketball" },
+    { value: "cricket", label: "Cricket" },
+    { value: "volleyball", label: "Volleyball" },
+    { value: "table_tennis", label: "Table Tennis" },
+  ];
+
+  // Available unit options for dimensions
+  const unitOptions = [
+    { value: "meters", label: "Meters" },
+    { value: "feet", label: "Feet" },
+  ];
+
+  // Handle feature selection from dropdown
+  const handleFeatureToggle = (featureValue) => {
+    setCourtFormData((prev) => {
+      const currentFeatures = prev.features || [];
+      const isSelected = currentFeatures.includes(featureValue);
+
+      if (isSelected) {
+        // Remove feature if already selected
+        return {
+          ...prev,
+          features: currentFeatures.filter((f) => f !== featureValue),
+        };
+      } else {
+        // Add feature if not selected
+        return {
+          ...prev,
+          features: [...currentFeatures, featureValue],
+        };
+      }
+    });
   };
 
   const handleSave = () => {
@@ -592,13 +688,11 @@ const CourtModal = ({ isOpen, onClose, courtData, onSave, isEditing }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="">Select Sport</option>
-                  <option value="badminton">Badminton</option>
-                  <option value="tennis">Tennis</option>
-                  <option value="football">Football</option>
-                  <option value="basketball">Basketball</option>
-                  <option value="cricket">Cricket</option>
-                  <option value="volleyball">Volleyball</option>
-                  <option value="table_tennis">Table Tennis</option>
+                  {sportTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -672,8 +766,11 @@ const CourtModal = ({ isOpen, onClose, courtData, onSave, isEditing }) => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="meters">Meters</option>
-                  <option value="feet">Feet</option>
+                  {unitOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -762,13 +859,37 @@ const CourtModal = ({ isOpen, onClose, courtData, onSave, isEditing }) => {
           {/* Features */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">Features</h3>
-            <textarea
-              value={courtFormData.features.join(", ")}
-              onChange={(e) => handleArrayChange("features", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-              rows="3"
-              placeholder="Enter features separated by commas (e.g., Air Conditioning, LED Lighting, Sound System)"
-            />
+            <div className="space-y-2">
+              {featureOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-center space-x-3 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={courtFormData.features.includes(option.value)}
+                    onChange={() => handleFeatureToggle(option.value)}
+                    className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
+                  />
+                  <span className="text-gray-700">{option.label}</span>
+                </label>
+              ))}
+            </div>
+            {/* Display selected features */}
+            {courtFormData.features.length > 0 && (
+              <div className="mt-3 p-2 bg-gray-50 rounded-md">
+                <span className="text-sm text-gray-600">Selected: </span>
+                <span className="text-sm font-medium">
+                  {courtFormData.features
+                    .map(
+                      (feature) =>
+                        featureOptions.find((opt) => opt.value === feature)
+                          ?.label || feature
+                    )
+                    .join(", ")}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Equipment */}
