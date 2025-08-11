@@ -3,7 +3,12 @@ import jwt from 'jsonwebtoken';
 // Generate JWT Access Token (short-lived)
 export function generateAccessToken(user) {
   return jwt.sign(
-    { id: user._id, email: user.email },
+    { 
+      id: user._id, 
+      email: user.email,
+      role: user.role, // Include role in token
+      username: user.username
+    },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: '15m' }
   );
@@ -12,7 +17,11 @@ export function generateAccessToken(user) {
 // Generate JWT Refresh Token (long-lived)
 export function generateRefreshToken(user) {
   return jwt.sign(
-    { id: user._id, email: user.email },
+    { 
+      id: user._id, 
+      email: user.email,
+      role: user.role // Include role in refresh token too
+    },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: '7d' }
   );
