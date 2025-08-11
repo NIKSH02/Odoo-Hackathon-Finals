@@ -8,13 +8,25 @@ export const requireRole = (...roles) => {
       throw new ApiError(401, "Authentication required");
     }
 
-    if (!roles.includes(req.user.role)) {
+    console.log('🔍 Role check - Required roles:', roles);
+    console.log('🔍 Role check - User role:', req.user.role);
+    console.log('🔍 Role check - User ID:', req.user._id || req.user.id);
+
+    if (!req.user.role) {
       throw new ApiError(
         403,
-        `Access denied. Required role: ${roles.join(" or ")}`
+        "Access denied. User role not set. Please contact administrator."
       );
     }
 
+    if (!roles.includes(req.user.role)) {
+      throw new ApiError(
+        403,
+        `Access denied. Required role: ${roles.join(" or ")}. Your role: ${req.user.role}`
+      );
+    }
+
+    console.log('✅ Role check passed!');
     next();
   });
 };
