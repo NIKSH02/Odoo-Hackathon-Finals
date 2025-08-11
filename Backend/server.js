@@ -11,6 +11,7 @@ import bookingRoutes from "./routes/booking.js";
 import reviewRoutes from "./routes/review.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import searchRoutes from "./routes/search.js";
+import adminRoutes from "./routes/admin.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 
@@ -56,6 +57,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 Route Not Found handler
 app.use((req, res, next) => {

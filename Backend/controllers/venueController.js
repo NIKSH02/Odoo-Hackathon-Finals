@@ -171,6 +171,7 @@ const createVenue = asyncHandler(async (req, res) => {
     photos,
     startingPrice,
     operatingHours: JSON.parse(operatingHours),
+    status: "pending", // All new venues require admin approval
   });
 
   await venue.save();

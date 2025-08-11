@@ -22,9 +22,11 @@ export const requireRole = (...roles) => {
 // Specific role middlewares for cleaner route definitions
 export const requirePlayer = requireRole("player");
 export const requireFacilityOwner = requireRole("facility_owner");
-export const requireAnyRole = requireRole("player", "facility_owner");
+export const requireAdmin = requireRole("admin");
+export const requireAnyRole = requireRole("player", "facility_owner", "admin");
+export const requireOwnerOrAdmin = requireRole("facility_owner", "admin");
 
-// Middleware to check resource ownership (for facility owners)
+// Middleware to check resource ownership (for facility owners or admins)
 export const requireOwnership = (resourceModel, ownerField = "owner") => {
   return asyncHandler(async (req, res, next) => {
     const resourceId =
@@ -40,8 +42,11 @@ export const requireOwnership = (resourceModel, ownerField = "owner") => {
       throw new ApiError(404, "Resource not found");
     }
 
-    // Check if user owns the resource
-    if (resource[ownerField].toString() !== req.user.id) {
+    // Admins can access any resource, owners can access their own
+    const isOwner = resource[ownerField].toString() === req.user.id;
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
       throw new ApiError(403, "You can only access your own resources");
     }
 
@@ -51,7 +56,7 @@ export const requireOwnership = (resourceModel, ownerField = "owner") => {
   });
 };
 
-// Middleware to check if user can access booking (owner or booker)
+// Middleware to check if user can access booking (owner, booker, or admin)
 export const requireBookingAccess = asyncHandler(async (req, res, next) => {
   const { bookingId } = req.params;
 
@@ -64,11 +69,12 @@ export const requireBookingAccess = asyncHandler(async (req, res, next) => {
     throw new ApiError(404, "Booking not found");
   }
 
-  // Check if user is the booker or venue owner
+  // Check if user is the booker, venue owner, or admin
   const isBooker = booking.user.toString() === req.user.id;
   const isVenueOwner = booking.venue.owner.toString() === req.user.id;
+  const isAdmin = req.user.role === "admin";
 
-  if (!isBooker && !isVenueOwner) {
+  if (!isBooker && !isVenueOwner && !isAdmin) {
     throw new ApiError(403, "Access denied");
   }
 

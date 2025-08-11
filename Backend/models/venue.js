@@ -118,6 +118,57 @@ const venueSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // Approval workflow fields
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    approvedAt: {
+      type: Date,
+    },
+    approvalComments: {
+      type: String,
+    },
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    rejectedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
+    },
+    rejectionComments: {
+      type: String,
+    },
+
+    // Suspension and reactivation fields
+    suspendedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    suspendedAt: {
+      type: Date,
+    },
+    suspensionReason: {
+      type: String,
+    },
+    suspensionComments: {
+      type: String,
+    },
+    reactivatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    reactivatedAt: {
+      type: Date,
+    },
+    reactivationComments: {
+      type: String,
+    },
+
     totalBookings: {
       type: Number,
       default: 0,
