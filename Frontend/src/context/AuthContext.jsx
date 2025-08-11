@@ -8,6 +8,7 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
 
   // Check if token is valid
   const isTokenValid = (token) => {
@@ -38,6 +39,16 @@ const AuthProvider = ({ children }) => {
       const userData = response.data.data;
       setUser(userData);
       localStorage.setItem('authUser', JSON.stringify(userData));
+      
+      // Check if user needs to set role (Google login users)
+      if (userData && (!userData.role || userData.role === null || userData.role === undefined)) {
+        console.log('User needs role selection:', userData);
+        setShowRoleModal(true);
+      } else {
+        console.log('User has role:', userData?.role);
+        setShowRoleModal(false);
+      }
+      
       return userData;
     } catch (error) {
       console.error('Error fetching user details:', error);
@@ -102,6 +113,12 @@ const AuthProvider = ({ children }) => {
       if (userData) {
         setUser(userData);
         localStorage.setItem('authUser', JSON.stringify(userData));
+        
+        // Check if user needs to set role (Google login users)
+        if (userData && (!userData.role || userData.role === null || userData.role === undefined)) {
+          console.log('User needs role selection after login:', userData);
+          setShowRoleModal(true);
+        }
       } else {
         // Fetch fresh user data from backend
         await fetchUserDetails();
@@ -131,6 +148,16 @@ const AuthProvider = ({ children }) => {
   const updateUser = (userData) => {
     setUser(userData);
     localStorage.setItem('authUser', JSON.stringify(userData));
+    
+    // Check if role modal should be hidden after update
+    if (userData && userData.role) {
+      setShowRoleModal(false);
+    }
+  };
+
+  // Close role modal
+  const closeRoleModal = () => {
+    setShowRoleModal(false);
   };
 
   // Get auth header for API requests
@@ -143,9 +170,11 @@ const AuthProvider = ({ children }) => {
     token,
     isAuthenticated,
     isLoading,
+    showRoleModal,
     login,
     logout,
     updateUser,
+    closeRoleModal,
     getAuthHeader,
     isTokenValid,
     fetchUserDetails,
