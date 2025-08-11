@@ -2,7 +2,12 @@ import api from "../api/axiosInstance";
 
 // Get current user details
 export const getCurrentUserService = async () => {
-  return api.get("/users/me");
+  try {
+    const response = await api.get("/users/me");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 // Update user profile
@@ -37,10 +42,20 @@ export const getUserByIdService = async (userId) => {
 
 // Delete user account
 export const deleteAccountService = async () => {
-  return api.delete("/users/account");
+  try {
+    const response = await api.delete("/users/account");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 // Update user role (for Google login users)
 export const updateUserRoleService = async (data) => {
-  return api.put("/users/role", data);
+  try {
+    const response = await api.put("/users/role", data);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
