@@ -7,14 +7,12 @@ import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleSelectionModal from "./components/RoleSelectionModal";
 import ScrollToTop from "./components/ScrollToTop";
-
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OTPVerificationPage from './pages/OTPVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import DashboardPage from './pages/DashboardPage';
 import AdminDashboard from './pages/AdminDashboard';
 
 import GoogleTranslate from "./services/GoogleTranslate";
@@ -23,11 +21,12 @@ import VenueBookingPage from "./pages/VenueBookingPage";
 import { useAuth } from "./hooks/useAuth";
 import SportsVenuesPage from "./pages/SportsVenuesPage";
 import UserProfile from "./components/UserProfile";
+import LocationChat from './pages/LocationChat'
 
 // Inner component that uses the auth context
 const AppContent = () => {
   const { user, showRoleModal, closeRoleModal } = useAuth();
-
+  console.log('user in app', user)
   return (
     <Router>
       <ScrollToTop />
@@ -43,6 +42,10 @@ const AppContent = () => {
                   <SportsVenuesPage />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/chat"
+              element={<LocationChat />}
             />
             <Route
               path="/venue/:id"

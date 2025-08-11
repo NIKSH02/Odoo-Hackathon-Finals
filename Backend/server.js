@@ -16,6 +16,10 @@ import adminRoutes from "./routes/admin.js";
 import locationRoutes from "./routes/location.js";
 import cookieParser from "cookie-parser";
 import path from "path";
+import {Server as socketIo} from 'socket.io'
+import { createServer } from 'http'
+import groupchatroute from './routes/groupChat.route.js'
+import locationChatSocket from './locationChatSocket.js'
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +31,18 @@ const PORT = process.env.PORT || 5000;
 
 connectDB();
 
+const httpServer = createServer(app);
+
+// server defining 
+const io = new socketIo(httpServer, {
+  cors: {
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+  transports: ["websocket", "polling"],
+});
+
 // Middleware
 app.use(
   cors({
@@ -35,6 +51,7 @@ app.use(
       "http://localhost:5174", // add any other frontend URLs you use
     ],
     credentials: true, // if you use cookies/sessions
+    transports: ["websocket", "polling"],
   })
 );
 
@@ -61,10 +78,73 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/location", locationRoutes);
+app.use('/api/messages', groupchatroute);
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "RawConnect Chat Server is running",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
+// Socket.io connection handling
+const socketHandler = locationChatSocket(io);
 
 // 404 Route Not Found handler
 app.use((req, res, next) => {
   next(new ApiError(404, "Route not found"));
+});
+
+// Graceful shutdown handling
+const gracefulShutdown = (signal) => {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+
+  server.close((err) => {
+    if (err) {
+      console.error("Error during server shutdown:", err);
+      process.exit(1);
+    }
+
+    console.log("HTTP server closed");
+
+    // Close database connection
+    mongoose.connection.close(false, () => {
+      console.log("MongoDB connection closed");
+
+      // Cleanup socket connections
+      if (socketHandler && socketHandler.cleanup) {
+        socketHandler.cleanup();
+        console.log("Socket connections cleaned up");
+      }
+
+      console.log("✅ Graceful shutdown completed");
+      process.exit(0);
+    });
+  });
+
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error("Forced shutdown due to timeout");
+    process.exit(1);
+  }, 10000);
+};
+
+// Listen for shutdown signals
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
 });
 
 // Global Error Handler
@@ -77,7 +157,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json(new ApiResponse(statusCode, null, message));
 });
 // Start Server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });
 
