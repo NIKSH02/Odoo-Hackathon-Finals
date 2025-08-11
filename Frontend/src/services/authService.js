@@ -60,3 +60,7 @@ export const resetPasswordService = async (token, newPassword) => {
 export const googleAuthService = async (credential) => {
   return api.post('/auth/google-auth', { credential });
 };
+
+export const refreshTokenService = async () => {
+  return api.post('/auth/refresh-token');
+};

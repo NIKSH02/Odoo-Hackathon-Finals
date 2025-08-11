@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { signinService, sendOtpService, loginWithOtpService, googleAuthService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
@@ -7,7 +7,6 @@ import { useAuth } from '../hooks/useAuth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
   const { showSuccess, showError, showLoading, dismissToast } = useToast();
   
@@ -51,29 +50,17 @@ const LoginPage = () => {
         // Check different possible response formats
         token = response.data.token || response.data.accessToken || response.data.authToken;
         user = response.data.user || response.data.userData;
-        
-        // If no structured token, but response exists, use the response itself as token temporarily
-        if (!token && response.data.message === 'Login successful') {
-          token = 'temp_token_' + Date.now(); // Temporary token until backend provides proper JWT
-          user = {
-            id: 'user',
-            email: usernameOrEmail.includes('@') ? usernameOrEmail : 'user@example.com',
-            username: usernameOrEmail.includes('@') ? usernameOrEmail.split('@')[0] : usernameOrEmail,
-            fullName: 'User',
-          };
-        }
       }
       
       dismissToast(loadingToast);
       
-      if (token) {
+      if (token && user) {
         const loginSuccess = await login(token, user);
         if (loginSuccess) {
           showSuccess('Login successful! Redirecting...');
-          const from = location.state?.from?.pathname || '/dashboard';
           setTimeout(() => {
-            navigate(from, { replace: true });
-          }, 1000);
+            navigate('/');
+          }, 300);
         } else {
           showError('Login failed. Please try again.');
         }
@@ -173,29 +160,17 @@ const LoginPage = () => {
         // Check different possible response formats
         token = response.data.token || response.data.accessToken || response.data.authToken;
         user = response.data.user || response.data.userData;
-        
-        // If no structured token, but response exists, use the response itself as token temporarily
-        if (!token && response.data.message === 'Login successful') {
-          token = 'temp_token_' + Date.now(); // Temporary token until backend provides proper JWT
-          user = {
-            id: 'user',
-            email: email,
-            username: email.split('@')[0],
-            fullName: 'User',
-          };
-        }
       }
       
       dismissToast(loadingToast);
       
-      if (token) {
+      if (token && user) {
         const loginSuccess = await login(token, user);
         if (loginSuccess) {
           showSuccess('Login successful! Redirecting...');
-          const from = location.state?.from?.pathname || '/dashboard';
           setTimeout(() => {
-            navigate(from, { replace: true });
-          }, 1000);
+            navigate('/');
+          }, 300);
         } else {
           showError('Login failed. Please try again.');
         }
@@ -223,10 +198,9 @@ const LoginPage = () => {
         const loginSuccess = await login(token, user);
         if (loginSuccess) {
           showSuccess('Google sign-in successful! Redirecting...');
-          const from = location.state?.from?.pathname || '/dashboard';
           setTimeout(() => {
-            navigate(from, { replace: true });
-          }, 1000);
+            navigate('/');
+          }, 300);
         } else {
           showError('Google sign-in failed. Please try again.');
         }
