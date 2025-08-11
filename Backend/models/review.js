@@ -15,7 +15,7 @@ const reviewSchema = new mongoose.Schema(
     booking: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
-      required: true,
+      required: false, // Made optional for direct reviews
     },
     rating: {
       overall: { type: Number, required: true, min: 1, max: 5 },
@@ -76,8 +76,17 @@ reviewSchema.index({ booking: 1 });
 reviewSchema.index({ "rating.overall": -1 });
 reviewSchema.index({ createdAt: -1 });
 
-// Ensure one review per booking
-reviewSchema.index({ booking: 1 }, { unique: true });
+// Ensure one review per booking (only when booking exists)
+reviewSchema.index({ booking: 1 }, { unique: true, sparse: true });
+
+// Ensure one direct review per user per venue (when no booking)
+reviewSchema.index(
+  { user: 1, venue: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { booking: { $exists: false } },
+  }
+);
 
 const Review = mongoose.model("Review", reviewSchema);
 export default Review;

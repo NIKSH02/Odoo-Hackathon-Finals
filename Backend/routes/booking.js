@@ -6,6 +6,7 @@ import {
   cancelBooking,
   updatePaymentStatus,
   getVenueBookings,
+  getVenueBookingsByDate,
   getBookingAnalytics,
   markBookingCompleted,
 } from "../controllers/bookingController.js";
@@ -73,6 +74,9 @@ router.get(
   requireOwnership(Venue),
   getVenueBookings
 );
+
+// Get venue bookings by specific date (public for availability checking)
+router.get("/venue/:venueId/date/:date", getVenueBookingsByDate);
 
 // Get booking analytics for a venue (facility owners only)
 router.get(

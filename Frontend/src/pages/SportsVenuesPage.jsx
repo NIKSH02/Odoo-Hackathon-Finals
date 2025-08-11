@@ -12,15 +12,15 @@ const VenueCard = ({ venue }) => {
   };
 
   return (
-    <div 
+    <div
       className="bg-white border border-gray-300 rounded-lg p-3 transition-all duration-300 relative group hover:shadow-xl hover:-translate-y-2 hover:border-black cursor-pointer"
-      style={{ 
-        width: '280px', 
-        height: '350px', 
-        minWidth: '280px', 
-        maxWidth: '280px',
-        minHeight: '350px', 
-        maxHeight: '350px' 
+      style={{
+        width: "280px",
+        height: "350px",
+        minWidth: "280px",
+        maxWidth: "280px",
+        minHeight: "350px",
+        maxHeight: "350px",
       }}
       onClick={handleViewDetails}
     >
@@ -43,9 +43,12 @@ const VenueCard = ({ venue }) => {
         <div style={{ height: '20px' }} className="flex items-center mb-2">
           <span className="text-sm font-semibold text-black truncate">{venue.name}</span>
         </div>
-        
+
         {/* Location */}
-        <div style={{ height: '20px' }} className="flex items-center gap-1 text-gray-700 mb-2">
+        <div
+          style={{ height: "20px" }}
+          className="flex items-center gap-1 text-gray-700 mb-2"
+        >
           <MapPin className="w-3 h-3 text-gray-600 flex-shrink-0" />
           <span className="text-xs truncate">{venue.address?.city || venue.address?.street || 'Location not specified'}</span>
         </div>
@@ -56,7 +59,10 @@ const VenueCard = ({ venue }) => {
         </div>
 
         {/* Rating */}
-        <div style={{ height: '20px' }} className="flex items-center gap-1 mb-2">
+        <div
+          style={{ height: "20px" }}
+          className="flex items-center gap-1 mb-2"
+        >
           <Star className="w-4 h-4 fill-gray-800 text-gray-800 flex-shrink-0" />
           <span className="text-sm font-semibold text-black">{venue.rating?.average || 0}</span>
           <span className="text-xs text-gray-500">({venue.rating?.totalReviews || 0})</span>
@@ -93,23 +99,25 @@ const MobileSidebar = ({ isOpen, onClose, filters, setFilters }) => {
     <>
       {/* Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onClose}
         />
       )}
-      
+
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-80 bg-gray-100 z-50 transform transition-transform duration-300 lg:hidden ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div
+        className={`fixed left-0 top-0 h-full w-80 bg-gray-100 z-50 transform transition-transform duration-300 lg:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="p-4 border-b border-gray-300 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-black">Filters</h3>
           <button onClick={onClose} className="p-1">
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
-        
+
         <div className="p-4 overflow-y-auto h-full">
           <SidebarContent filters={filters} setFilters={setFilters} />
         </div>
@@ -120,11 +128,11 @@ const MobileSidebar = ({ isOpen, onClose, filters, setFilters }) => {
 
 const SidebarContent = ({ filters, setFilters }) => {
   const handleRatingChange = (rating) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       selectedRatings: prev.selectedRatings.includes(rating)
-        ? prev.selectedRatings.filter(r => r !== rating)
-        : [...prev.selectedRatings, rating]
+        ? prev.selectedRatings.filter((r) => r !== rating)
+        : [...prev.selectedRatings, rating],
     }));
   };
 
@@ -133,8 +141,8 @@ const SidebarContent = ({ filters, setFilters }) => {
       searchTerm: '',
       selectedSport: '',
       priceRange: [0, 5500],
-      venueType: '',
-      selectedRatings: []
+      venueType: "",
+      selectedRatings: [],
     });
   };
 
@@ -151,7 +159,9 @@ const SidebarContent = ({ filters, setFilters }) => {
             type="text"
             placeholder="Search for venue"
             value={filters.searchTerm}
-            onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, searchTerm: e.target.value }))
+            }
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-black"
           />
         </div>
@@ -165,7 +175,9 @@ const SidebarContent = ({ filters, setFilters }) => {
         <div className="relative">
           <select
             value={filters.selectedSport}
-            onChange={(e) => setFilters(prev => ({ ...prev, selectedSport: e.target.value }))}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, selectedSport: e.target.value }))
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-black appearance-none bg-white"
           >
             <option value="">All Sports</option>
@@ -196,7 +208,12 @@ const SidebarContent = ({ filters, setFilters }) => {
             min="0"
             max="5500"
             value={filters.priceRange[1]}
-            onChange={(e) => setFilters(prev => ({ ...prev, priceRange: [0, parseInt(e.target.value)] }))}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                priceRange: [0, parseInt(e.target.value)],
+              }))
+            }
             className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer slider-black"
           />
         </div>
@@ -213,8 +230,10 @@ const SidebarContent = ({ filters, setFilters }) => {
               type="radio"
               name="venueType"
               value="indoor"
-              checked={filters.venueType === 'indoor'}
-              onChange={(e) => setFilters(prev => ({ ...prev, venueType: e.target.value }))}
+              checked={filters.venueType === "indoor"}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, venueType: e.target.value }))
+              }
               className="w-4 h-4 text-black border-gray-300 focus:ring-black"
             />
             <span className="ml-2 text-sm text-gray-700">Indoor</span>
@@ -224,8 +243,10 @@ const SidebarContent = ({ filters, setFilters }) => {
               type="radio"
               name="venueType"
               value="outdoor"
-              checked={filters.venueType === 'outdoor'}
-              onChange={(e) => setFilters(prev => ({ ...prev, venueType: e.target.value }))}
+              checked={filters.venueType === "outdoor"}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, venueType: e.target.value }))
+              }
               className="w-4 h-4 text-black border-gray-300 focus:ring-black"
             />
             <span className="ml-2 text-sm text-gray-700">Outdoor</span>
@@ -248,9 +269,7 @@ const SidebarContent = ({ filters, setFilters }) => {
                 onChange={() => handleRatingChange(stars)}
                 className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
               />
-              <span className="ml-2 text-sm text-gray-700">
-                {stars}+ stars
-              </span>
+              <span className="ml-2 text-sm text-gray-700">{stars}+ stars</span>
             </label>
           ))}
         </div>
@@ -268,6 +287,7 @@ const SidebarContent = ({ filters, setFilters }) => {
 };
 
 const SportsVenuesPage = () => {
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -276,9 +296,13 @@ const SportsVenuesPage = () => {
     searchTerm: '',
     selectedSport: '',
     priceRange: [0, 5500],
-    venueType: '',
-    selectedRatings: []
+    venueType: "",
+    selectedRatings: [],
   });
+
+  const handleViewVenueDetails = (venueId) => {
+    navigate(`/venue/${venueId}`);
+  };
 
   // Load venues on component mount and when filters change
   useEffect(() => {
@@ -358,12 +382,11 @@ const SportsVenuesPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
-    
+
       {/* Mobile Header */}
       <div className="lg:hidden bg-white border-b border-gray-300 p-4">
         <div className="flex items-center gap-3 mb-4">
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 hover:bg-gray-100 rounded-md"
           >
@@ -373,7 +396,7 @@ const SportsVenuesPage = () => {
             Sports Venues in Ahmedabad: Discover and Book Nearby Venues
           </h1>
         </div>
-        
+
         {/* Mobile Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
@@ -381,7 +404,9 @@ const SportsVenuesPage = () => {
             type="text"
             placeholder="Search for venue"
             value={filters.searchTerm}
-            onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, searchTerm: e.target.value }))
+            }
             className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-black"
           />
           <button className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -391,7 +416,6 @@ const SportsVenuesPage = () => {
       </div>
 
       {/* Desktop Header */}
-    
 
       <div className="flex">
         {/* Desktop Sidebar - Back to left side */}
@@ -400,8 +424,8 @@ const SportsVenuesPage = () => {
         </div>
 
         {/* Mobile Sidebar */}
-        <MobileSidebar 
-          isOpen={isSidebarOpen} 
+        <MobileSidebar
+          isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           filters={filters}
           setFilters={setFilters}
@@ -409,13 +433,13 @@ const SportsVenuesPage = () => {
 
         {/* Main Content with proper spacing */}
         <div className="flex-1 bg-white">
-            <div className="hidden lg:block bg-white border-b border-gray-300 py-6">
-        <div className="max-w-7xl mx-auto px-6">
-          <h1 className="text-2xl font-bold text-black text-center">
-            Sports Venues in Ahmedabad: Discover and Book Nearby Venues
-          </h1>
-        </div>
-      </div>
+          <div className="hidden lg:block bg-white border-b border-gray-300 py-6">
+            <div className="max-w-7xl mx-auto px-6">
+              <h1 className="text-2xl font-bold text-black text-center">
+                Sports Venues in Ahmedabad: Discover and Book Nearby Venues
+              </h1>
+            </div>
+          </div>
           <div className="max-w-7xl mx-auto px-6 py-8">
             {/* Loading State */}
             {loading && (
