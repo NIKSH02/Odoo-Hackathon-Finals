@@ -2,8 +2,13 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-const ProtectedRoute = ({ children, requireAuth = true }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute = ({ 
+  children, 
+  requireAuth = true, 
+  requiredRole = null,
+  allowedRoles = null 
+}) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
   // Show loading while checking authentication
@@ -24,11 +29,47 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
       // Redirect to login page with return url
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
+
+    // Check role-based access
+    if (requiredRole && user?.role !== requiredRole) {
+      // Redirect based on user role
+      switch (user?.role) {
+        case 'admin':
+          return <Navigate to="/admin" replace />;
+        case 'facility_owner':
+          return <Navigate to="/facility-owner-dashboard" replace />;
+        case 'player':
+        default:
+          return <Navigate to="/" replace />;
+      }
+    }
+
+    // Check if user role is in allowed roles list
+    if (allowedRoles && !allowedRoles.includes(user?.role)) {
+      // Redirect based on user role
+      switch (user?.role) {
+        case 'admin':
+          return <Navigate to="/admin" replace />;
+        case 'facility_owner':
+          return <Navigate to="/facility-owner-dashboard" replace />;
+        case 'player':
+        default:
+          return <Navigate to="/" replace />;
+      }
+    }
   } else {
     // Route is for non-authenticated users (like login/register)
     if (isAuthenticated) {
-      // If user is authenticated, redirect to home page
-      return <Navigate to="/" replace />;
+      // If user is authenticated, redirect based on their role
+      switch (user?.role) {
+        case 'admin':
+          return <Navigate to="/admin" replace />;
+        case 'facility_owner':
+          return <Navigate to="/facility-owner-dashboard" replace />;
+        case 'player':
+        default:
+          return <Navigate to="/" replace />;
+      }
     }
   }
 

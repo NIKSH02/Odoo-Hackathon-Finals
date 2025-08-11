@@ -14,6 +14,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import searchRoutes from "./routes/search.js";
 import adminRoutes from "./routes/admin.js";
 import locationRoutes from "./routes/location.js";
+import mapRoutes from "./routes/map.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 import {Server as socketIo} from 'socket.io'
@@ -92,6 +93,7 @@ app.get("/health", (req, res) => {
 
 // Socket.io connection handling
 const socketHandler = locationChatSocket(io);
+app.use("/api/map", mapRoutes);
 
 // 404 Route Not Found handler
 app.use((req, res, next) => {

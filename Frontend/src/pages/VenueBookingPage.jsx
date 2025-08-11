@@ -593,8 +593,11 @@ const VenueBookingPage = () => {
 
       const response = await createBookingService(bookingData);
 
-      // Navigate to payment or success page
-      navigate(`/booking-confirmation/${response.data.data._id}`);
+      // Show success message
+      alert("Booking created successfully! Redirecting to your bookings...");
+
+      // Navigate to user profile bookings section
+      navigate("/profile?tab=bookings");
     } catch (err) {
       console.error("Error creating booking:", err);
       alert(err.response?.data?.message || "Failed to create booking");

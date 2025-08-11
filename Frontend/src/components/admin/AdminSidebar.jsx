@@ -4,6 +4,7 @@ import {
   UsersIcon, 
   CalendarIcon, 
   MapIcon, 
+  BuildingOfficeIcon,
   CogIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
@@ -12,6 +13,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) 
   const navigationItems = [
     { id: 'dashboard', name: 'Dashboard', icon: HomeIcon },
     { id: 'users', name: 'Users', icon: UsersIcon },
+    { id: 'venues', name: 'Venues', icon: BuildingOfficeIcon },
     { id: 'bookings', name: 'Bookings', icon: CalendarIcon },
     { id: 'courts', name: 'Courts', icon: MapIcon },
     { id: 'settings', name: 'Settings', icon: CogIcon },
