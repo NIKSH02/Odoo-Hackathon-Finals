@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, MapPin, Search, ChevronDown, X, Filter, Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { getAllVenuesService } from '../services/venueService';
 
 const VenueCard = ({ venue }) => {
+  const navigate = useNavigate();
+
+  const handleViewDetails = () => {
+    navigate(`/venue/${venue._id}`);
+  };
+
   return (
     <div 
       className="bg-white border border-gray-300 rounded-lg p-3 transition-all duration-300 relative group hover:shadow-xl hover:-translate-y-2 hover:border-black cursor-pointer"
@@ -14,42 +22,49 @@ const VenueCard = ({ venue }) => {
         minHeight: '350px', 
         maxHeight: '350px' 
       }}
+      onClick={handleViewDetails}
     >
-      {/* Venue Name Badge */}
-     
-      {/* Image Placeholder */}
-      <div className="bg-gray-200 rounded-md h-28 flex items-center justify-center border border-gray-300 mb-3 mt-2 transition-all duration-300 group-hover:bg-gray-300 group-hover:border-gray-400">
-        <span className="text-gray-600 text-sm group-hover:text-gray-700">Image</span>
+      {/* Image */}
+      <div className="bg-gray-200 rounded-md h-28 flex items-center justify-center border border-gray-300 mb-3 mt-2 transition-all duration-300 group-hover:bg-gray-300 group-hover:border-gray-400 overflow-hidden">
+        {venue.photos && venue.photos.length > 0 ? (
+          <img 
+            src={venue.photos[0].url || venue.photos[0]} 
+            alt={venue.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-gray-600 text-sm group-hover:text-gray-700">No Image</span>
+        )}
       </div>
 
       {/* Venue Details - Fixed height container */}
       <div style={{ height: '200px' }} className="flex flex-col">
-        {/* Sport Type */}
+        {/* Venue Name */}
         <div style={{ height: '20px' }} className="flex items-center mb-2">
-          <span className="text-sm font-semibold text-black truncate">{venue.sportType}</span>
+          <span className="text-sm font-semibold text-black truncate">{venue.name}</span>
         </div>
         
         {/* Location */}
         <div style={{ height: '20px' }} className="flex items-center gap-1 text-gray-700 mb-2">
           <MapPin className="w-3 h-3 text-gray-600 flex-shrink-0" />
-          <span className="text-xs truncate">{venue.location}</span>
+          <span className="text-xs truncate">{venue.address?.city || venue.address?.street || 'Location not specified'}</span>
         </div>
 
         {/* Price */}
         <div style={{ height: '20px' }} className="flex items-center mb-2">
-          <span className="text-sm font-semibold text-black truncate">₹ {venue.price} per hour</span>
+          <span className="text-sm font-semibold text-black truncate">₹ {venue.startingPrice || 0} per hour</span>
         </div>
 
         {/* Rating */}
         <div style={{ height: '20px' }} className="flex items-center gap-1 mb-2">
           <Star className="w-4 h-4 fill-gray-800 text-gray-800 flex-shrink-0" />
-          <span className="text-sm font-semibold text-black">{venue.rating}</span>
-          <span className="text-xs text-gray-500">({venue.reviewCount})</span>
+          <span className="text-sm font-semibold text-black">{venue.rating?.average || 0}</span>
+          <span className="text-xs text-gray-500">({venue.rating?.totalReviews || 0})</span>
         </div>
 
         {/* Tags */}
         <div style={{ height: '40px' }} className="flex flex-wrap gap-1 mb-3 overflow-hidden">
-          {venue.tags.slice(0, 4).map((tag, index) => (
+          {(venue.amenities || []).slice(0, 4).map((tag, index) => (
             <span
               key={index}
               className="px-1.5 py-0.5 rounded-full text-xs bg-gray-200 text-gray-700 border border-gray-300 h-fit transition-all duration-300 group-hover:bg-gray-300 group-hover:text-gray-800"
@@ -61,7 +76,10 @@ const VenueCard = ({ venue }) => {
 
         {/* View Details Button */}
         <div className="mt-auto">
-          <button className="w-full bg-black text-white py-1.5 px-3 rounded-md text-sm font-medium transition-all duration-300 hover:bg-gray-800 hover:shadow-lg transform hover:scale-105 group-hover:bg-gray-800">
+          <button 
+            onClick={handleViewDetails}
+            className="w-full bg-black text-white py-1.5 px-3 rounded-md text-sm font-medium transition-all duration-300 hover:bg-gray-800 hover:shadow-lg transform hover:scale-105 group-hover:bg-gray-800"
+          >
             View Details
           </button>
         </div>
@@ -113,7 +131,7 @@ const SidebarContent = ({ filters, setFilters }) => {
   const clearFilters = () => {
     setFilters({
       searchTerm: '',
-      selectedSport: 'All Sport',
+      selectedSport: '',
       priceRange: [0, 5500],
       venueType: '',
       selectedRatings: []
@@ -150,11 +168,14 @@ const SidebarContent = ({ filters, setFilters }) => {
             onChange={(e) => setFilters(prev => ({ ...prev, selectedSport: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-black appearance-none bg-white"
           >
-            <option>All Sport</option>
-            <option>Badminton</option>
-            <option>Cricket</option>
-            <option>Football</option>
-            <option>Tennis</option>
+            <option value="">All Sports</option>
+            <option value="badminton">Badminton</option>
+            <option value="tennis">Tennis</option>
+            <option value="football">Football</option>
+            <option value="basketball">Basketball</option>
+            <option value="cricket">Cricket</option>
+            <option value="volleyball">Volleyball</option>
+            <option value="table_tennis">Table Tennis</option>
           </select>
           <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4 pointer-events-none" />
         </div>
@@ -248,73 +269,91 @@ const SidebarContent = ({ filters, setFilters }) => {
 
 const SportsVenuesPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [venues, setVenues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     searchTerm: '',
-    selectedSport: 'All Sport',
+    selectedSport: '',
     priceRange: [0, 5500],
     venueType: '',
     selectedRatings: []
   });
 
-  // Sample venue data - standardized for consistent card sizing
-  const venues = [
+  // Load venues on component mount and when filters change
+  useEffect(() => {
+    const loadVenues = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    {
-      id: 2,
-      name: "Elite Club",
-      sportType: "Badminton Court",
-      location: "Vaishali Circle",
-      price: "350",
-      rating: "4.5",
-      reviewCount: "125",
-      tags: ["Indoor", "AC", "Premium", "Available"],
-      type: "indoor"
-    },
-    {
-      id: 3,
-      name: "Victory Courts",
-      sportType: "Badminton Court",
-      location: "Vaishali Circle",
-      price: "350",
-      rating: "4.5",
-      reviewCount: "125",
-      tags: ["Indoor", "AC", "Premium", "Available"],
-      type: "indoor"
-    },
-    {
-      id: 4,
-      name: "Champions Hub",
-      sportType: "Badminton Court",
-      location: "Vaishali Circle",
-      price: "350",
-      rating: "4.5",
-      reviewCount: "125",
-      tags: ["Indoor", "AC", "Premium", "Available"],
-      type: "indoor"
-    },
-    {
-      id: 5,
-      name: "Pro Stadium",
-      sportType: "Badminton Court",
-      location: "Vaishali Circle",
-      price: "350",
-      rating: "4.5",
-      reviewCount: "125",
-      tags: ["Indoor", "AC", "Premium", "Available"],
-      type: "indoor"
-    },
-    {
-      id: 6,
-      name: "Super Courts",
-      sportType: "Badminton Court",
-      location: "Vaishali Circle",
-      price: "350",
-      rating: "4.5",
-      reviewCount: "125",
-      tags: ["Indoor", "AC", "Premium", "Available"],
-      type: "indoor"
-    }
-  ];
+        // Build query parameters based on filters
+        const queryParams = {
+          page: 1,
+          limit: 20,
+        };
+
+        if (filters.searchTerm) {
+          queryParams.search = filters.searchTerm;
+        }
+
+        if (filters.selectedSport) {
+          queryParams.sport = filters.selectedSport;
+        }
+
+        if (filters.priceRange[1] < 5500) {
+          queryParams.maxPrice = filters.priceRange[1];
+        }
+
+        if (filters.selectedRatings.length > 0) {
+          queryParams.rating = Math.min(...filters.selectedRatings);
+        }
+
+        const response = await getAllVenuesService(queryParams);
+        
+        if (response.data && response.data.data && response.data.data.venues) {
+          let venuesData = response.data.data.venues;
+
+          // Apply venue type filter (indoor/outdoor) client-side
+          if (filters.venueType) {
+            venuesData = venuesData.filter(venue => {
+              // Assuming venue type can be determined from amenities or a specific field
+              const hasIndoorAmenities = venue.amenities?.some(amenity => 
+                ['ac', 'indoor'].includes(amenity.toLowerCase())
+              );
+              
+              if (filters.venueType === 'indoor') {
+                return hasIndoorAmenities;
+              } else if (filters.venueType === 'outdoor') {
+                return !hasIndoorAmenities;
+              }
+              return true;
+            });
+          }
+
+          setVenues(venuesData);
+        } else {
+          setVenues([]);
+        }
+      } catch (err) {
+        console.error('Error loading venues:', err);
+        setError('Failed to load venues');
+        setVenues([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVenues();
+  }, [filters]);
+
+  // Reset selectedSport filter initialization
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      selectedSport: ''
+    }));
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -378,19 +417,45 @@ const SportsVenuesPage = () => {
         </div>
       </div>
           <div className="max-w-7xl mx-auto px-6 py-8">
+            {/* Loading State */}
+            {loading && (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-lg text-gray-600">Loading venues...</div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                {error}
+              </div>
+            )}
+
+            {/* No venues found */}
+            {!loading && !error && venues.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500 text-lg">No venues found</div>
+                <div className="text-gray-400 text-sm mt-2">Try adjusting your filters or search terms</div>
+              </div>
+            )}
+
             {/* Cards Grid with better spacing */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 justify-items-center">
-              {venues.map((venue) => (
-                <VenueCard key={venue.id} venue={venue} />
-              ))}
-            </div>
+            {!loading && venues.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 justify-items-center">
+                {venues.map((venue) => (
+                  <VenueCard key={venue._id} venue={venue} />
+                ))}
+              </div>
+            )}
 
             {/* Load More for mobile */}
-            <div className="mt-8 text-center lg:hidden">
-              <button className="bg-black text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors">
-                Load More
-              </button>
-            </div>
+            {!loading && venues.length > 0 && (
+              <div className="mt-8 text-center lg:hidden">
+                <button className="bg-black text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors">
+                  Load More
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

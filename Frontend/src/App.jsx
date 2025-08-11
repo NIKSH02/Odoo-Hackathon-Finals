@@ -14,7 +14,6 @@ import RegisterPage from './pages/RegisterPage';
 import OTPVerificationPage from './pages/OTPVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import DashboardPage from './pages/DashboardPage';
 
 import GoogleTranslate from './services/GoogleTranslate';
 import SingleVenueDetailsPage from './pages/SingleVenueDetailsPage'
@@ -93,14 +92,6 @@ const AppContent = () => {
               element={
                 <ProtectedRoute requireAuth={false}>
                   <ResetPasswordPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute requireAuth={true}>
-                  <DashboardPage />
                 </ProtectedRoute>
               } 
             />

@@ -22,12 +22,21 @@ const getAllVenues = asyncHandler(async (req, res) => {
     sortBy = "createdAt",
     sortOrder = "desc",
     search,
+    includeAll = false, // New parameter for debugging
   } = req.query;
 
   const skip = (page - 1) * limit;
 
   // Build filter object
-  const filter = { status: "approved", isActive: true };
+  // For debugging, allow fetching all venues regardless of status
+  const filter = includeAll === 'true' ? {} : { status: "approved", isActive: true };
+  
+  // Debug: Log the filter being used
+  console.log("Filter being used:", filter);
+  
+  // Debug: Check total venues in database
+  const totalVenuesInDb = await Venue.countDocuments({});
+  console.log("Total venues in database:", totalVenuesInDb);
 
   if (sport) {
     filter.sportsSupported = { $in: [sport] };
@@ -68,6 +77,17 @@ const getAllVenues = asyncHandler(async (req, res) => {
 
   const total = await Venue.countDocuments(filter);
   const totalPages = Math.ceil(total / limit);
+
+  // Debug logging
+  console.log("Venues found:", venues.length);
+  console.log("Total matching filter:", total);
+  if (venues.length > 0) {
+    console.log("Sample venue:", {
+      name: venues[0].name,
+      status: venues[0].status,
+      isActive: venues[0].isActive
+    });
+  }
 
   res.status(200).json(
     new ApiResponse(

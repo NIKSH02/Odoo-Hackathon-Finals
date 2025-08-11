@@ -7,7 +7,27 @@ export const getCurrentUserService = async () => {
 
 // Update user profile
 export const updateProfileService = async (data) => {
+  // Handle FormData for profile picture upload
+  if (data instanceof FormData) {
+    return api.put('/users/profile', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
   return api.put('/users/profile', data);
+};
+
+// Update profile picture only
+export const updateProfilePictureService = async (file) => {
+  const formData = new FormData();
+  formData.append('profilePicture', file);
+  
+  return api.put('/users/profile-picture', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
 
 // Get user by ID
