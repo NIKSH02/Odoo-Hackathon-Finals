@@ -4,6 +4,7 @@ import HeroSection from '../components/HeroSection';
 import Footer from '../components/Footer';
 import VenueBookingSection from '../components/VenueBookingSection';
 import InfiniteMarquee from '../components/InfiniteMarquee';
+import HowItWork from '../components/HowItWork';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -30,9 +31,8 @@ const LandingPage = () => {
         onLocationSearch={handleLocationSearch}
       />
        <InfiniteMarquee/>
-     <VenueBookingSection searchLocation={searchLocation} />
-    
-    
+     <VenueBookingSection searchLocation={searchLocation} />  
+     <HowItWork />  
            <Footer />
     </>
   );

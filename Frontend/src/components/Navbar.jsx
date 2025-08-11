@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GoogleTranslate from '../services/GoogleTranslate';
-import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { 
-  MoonIcon, 
-  SunIcon, 
   HomeIcon, 
   InformationCircleIcon, 
   UserPlusIcon, 
@@ -18,14 +15,9 @@ import {
 // --- Navbar Component ---
 
 const Navbar = ({ onOpenSignUpModal, onOpenLoginModal }) => {
-  const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
 
   const handleLogout = () => {
     logout();
@@ -143,19 +135,6 @@ const Navbar = ({ onOpenSignUpModal, onOpenLoginModal }) => {
               </div>
             )}
 
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-300 hover:scale-110 shadow-md"
-              aria-label="Toggle theme"
-            >
-              {theme !== 'dark' ? (
-                <MoonIcon className="w-5 h-5" />
-              ) : (
-                <SunIcon className="w-5 h-5" />
-              )}
-            </button>
-
             {/* Google Translate */}
             <div className="flex items-center">
               <GoogleTranslate />
@@ -163,33 +142,17 @@ const Navbar = ({ onOpenSignUpModal, onOpenLoginModal }) => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center space-x-4">
-            {/* Theme Toggle Mobile */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-300"
-              aria-label="Toggle theme"
-            >
-              {theme !== 'dark' ? (
-                <MoonIcon className="w-5 h-5" />
-              ) : (
-                <SunIcon className="w-5 h-5" />
-              )}
-            </button>
-
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={toggleMobileMenu}
-              className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-300"
-              aria-label="Toggle mobile menu"
-            >
-              {isMobileMenuOpen ? (
-                <XMarkIcon className="w-6 h-6" />
-              ) : (
-                <Bars3Icon className="w-6 h-6" />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg text-gray-700 hover:text-black hover:bg-gray-100 transition-all duration-300"
+            aria-label="Toggle mobile menu"
+          >
+            {isMobileMenuOpen ? (
+              <XMarkIcon className="w-6 h-6" />
+            ) : (
+              <Bars3Icon className="w-6 h-6" />
+            )}
+          </button>
         </div>
 
         {/* Mobile Menu */}

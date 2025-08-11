@@ -219,19 +219,21 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex">
       {/* Desktop Layout - 40/60 Split */}
       <div className="hidden lg:flex lg:w-2/5 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 opacity-90"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-black opacity-95"></div>
         <img
           src="/authpage.jpg"
-          alt="QuickCourt Authentication"
+          alt="SportVenue Authentication"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="relative z-10 flex flex-col justify-center px-12 text-white">
-          <h1 className="text-4xl font-bold mb-4">Welcome back to QuickCourt</h1>
-          <p className="text-xl opacity-90">
-            Sign in to access your sports facility bookings and manage your gaming experience.
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+            Welcome back to SportVenue
+          </h1>
+          <p className="text-xl text-gray-200">
+            Sign in to access your sports facility bookings and manage your sports experience.
           </p>
         </div>
       </div>
@@ -241,26 +243,26 @@ const LoginPage = () => {
         <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto">
           <div className="lg:hidden text-center mb-6">
             <Link to="/" className="inline-block">
-              <h1 className="text-2xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                QuickCourt
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent">
+                SportVenue
               </h1>
             </Link>
           </div>
           
           <Link to="/" className="hidden lg:flex justify-center mb-6">
-            <h1 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-              QuickCourt
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent">
+              SportVenue
             </h1>
           </Link>
           
-          <h2 className="text-center text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+          <h2 className="text-center text-xl sm:text-2xl lg:text-3xl font-extrabold bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
             <Link
               to="/register"
-              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+              className="font-medium text-black hover:text-gray-700 transition-colors duration-200"
             >
               create a new account
             </Link>
@@ -268,7 +270,7 @@ const LoginPage = () => {
         </div>
 
         <div className="mt-4 lg:mt-8 w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto">
-          <div className="bg-white dark:bg-gray-800 py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-10 shadow sm:rounded-lg">
+          <div className="bg-white py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-10 shadow-xl border border-gray-200 sm:rounded-xl">
             {/* Login Method Toggle */}
             <div className="flex mb-4 sm:mb-6">
               <button
@@ -280,10 +282,10 @@ const LoginPage = () => {
                 setOtpTimer(0);
                 setCanResendOtp(false);
               }}
-              className={`flex-1 py-2 px-4 text-center text-sm font-medium rounded-l-md border ${
+              className={`flex-1 py-2 px-4 text-center text-sm font-medium rounded-l-md border transition-all duration-200 ${
                 loginMethod === 'password'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
               Password
@@ -294,10 +296,10 @@ const LoginPage = () => {
                 setLoginMethod('otp');
                 setPassword('');
               }}
-              className={`flex-1 py-2 px-4 text-center text-sm font-medium rounded-r-md border border-l-0 ${
+              className={`flex-1 py-2 px-4 text-center text-sm font-medium rounded-r-md border border-l-0 transition-all duration-200 ${
                 loginMethod === 'otp'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
               OTP
@@ -308,7 +310,7 @@ const LoginPage = () => {
             {loginMethod === 'password' ? (
               <>
                 <div>
-                  <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700">
                     Username or Email
                   </label>
                   <div className="mt-1">
@@ -319,14 +321,14 @@ const LoginPage = () => {
                       required
                       value={usernameOrEmail}
                       onChange={(e) => setUsernameOrEmail(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                       placeholder="Enter your username or email"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     Password
                   </label>
                   <div className="mt-1">
@@ -337,14 +339,14 @@ const LoginPage = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                       placeholder="Enter your password"
                     />
                   </div>
                   <div className="mt-2 text-right">
                     <Link
                       to="/forgot-password"
-                      className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                      className="text-sm text-black hover:text-gray-700 transition-colors duration-200"
                     >
                       Forgot your password?
                     </Link>

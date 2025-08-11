@@ -287,7 +287,6 @@ const SidebarContent = ({ filters, setFilters }) => {
 };
 
 const SportsVenuesPage = () => {
-  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -299,10 +298,6 @@ const SportsVenuesPage = () => {
     venueType: "",
     selectedRatings: [],
   });
-
-  const handleViewVenueDetails = (venueId) => {
-    navigate(`/venue/${venueId}`);
-  };
 
   // Load venues on component mount and when filters change
   useEffect(() => {

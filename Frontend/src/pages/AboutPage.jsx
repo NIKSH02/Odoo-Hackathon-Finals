@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import Footer from '../components/Footer.jsx';
 import { MapPin, Users, Calendar, Star, Award, Target, Zap, Shield } from 'lucide-react';
+import TeamSection from '../components/TeamMember.jsx';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 60 },
@@ -104,6 +105,7 @@ const AboutPage = () => {
             />
           ))}
         </div>
+        <TeamSection />
 
         {/* Floating geometric shapes */}
         <motion.div

@@ -2,18 +2,15 @@ import React from 'react';
 import MarqueeItem from './MarqueeItem';
 
 const images = [
-  { src: '/images/mob1.jpg', title: 'Badminton Courts' },
-  { src: '/images/mob2.jpg', title: 'Tennis Facilities' },
-  { src: '/images/mob3.jpg', title: 'Basketball Arenas' },
-  { src: '/images/mob5.jpg', title: 'Football Grounds' },
-  { src: '/images/mob6.jpg', title: 'Cricket Stadiums' },
-  { src: '/images/fest2.jpg', title: 'Swimming Pools' },
-  { src: '/images/mob8.jpg', title: 'Volleyball Courts' },
-  { src: '/images/mob9.jpg', title: 'Table Tennis' },
-  { src: '/images/fest3.jpg', title: 'Fitness Centers' },
-  { src: '/images/mob11.jpg', title: 'Indoor Sports' },
-  { src: '/images/fest11.jpg', title: 'Multi-Sport Complexes' },
-  { src: '/images/fest12.jpg', title: 'Outdoor Facilities' },
+  { src: '/images/badminton.jpg', title: 'Badminton Courts' },
+  { src: '/images/tabletennis.jpg', title: 'Tennis Facilities' },
+  
+  { src: '/images/football.jpg', title: 'Football ' },
+  { src: '/images/cricket.jpg', title: 'Cricket ' },
+
+  { src: '/images/volleyball.jpg', title: 'Volleyball Courts' },
+ 
+
 ];
 
 const InfiniteMarquee = () => {

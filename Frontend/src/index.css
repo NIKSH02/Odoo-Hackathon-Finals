@@ -1,7 +1,7 @@
 
 
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
+
 
 
 /* For dark mode theming with Tailwind, use the .dark class as a parent:
