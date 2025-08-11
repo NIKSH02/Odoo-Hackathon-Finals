@@ -34,6 +34,19 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route 
+              path="/venue/:venueId" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <SingleVenueDetailsPage />
+                </ProtectedRoute>
+              }
+              />
+              <Route path='/venue/:venueId/booking' element={
+                <ProtectedRoute requireAuth={true}>
+                  <VenueBookingPage />
+                </ProtectedRoute>
+              } />
+            <Route 
               path="/login" 
               element={
                 <ProtectedRoute requireAuth={false}>
