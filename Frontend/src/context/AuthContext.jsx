@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { AuthContext } from './AuthContextProvider';
 import { getCurrentUserService } from '../services/userService';
+import { refreshTokenService } from '../services/authService';
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -10,13 +11,12 @@ const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
 
-  // Check if token is valid
+  // Check if token is valid and not expired
   const isTokenValid = (token) => {
     if (!token) return false;
     
     try {
-      // For now, if it's not a JWT, we'll just check if it exists
-      // Later you can enforce JWT format when your backend is updated
+      // For JWT tokens, check expiration
       if (token.includes('.')) {
         const decoded = jwtDecode(token);
         const currentTime = Date.now() / 1000;
@@ -31,6 +31,55 @@ const AuthProvider = ({ children }) => {
       return false;
     }
   };
+
+  // Check if token is about to expire (within 5 minutes)
+  const isTokenExpiringSoon = (token) => {
+    if (!token || !token.includes('.')) return false;
+    
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+      const timeUntilExpiry = decoded.exp - currentTime;
+      return timeUntilExpiry < 300; // 5 minutes
+    } catch (error) {
+      console.error('Error checking token expiry:', error);
+      return false;
+    }
+  };
+
+  // Refresh access token if needed
+  const refreshAccessToken = useCallback(async () => {
+    try {
+      const response = await refreshTokenService();
+      if (response.data && response.data.data && response.data.data.token) {
+        const newToken = response.data.data.token;
+        setToken(newToken);
+        localStorage.setItem('authToken', newToken);
+        return newToken;
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      logout();
+    }
+    return null;
+  }, []);
+
+  // Auto-refresh token when it's about to expire
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+
+    const checkTokenExpiry = async () => {
+      if (isTokenExpiringSoon(token)) {
+        console.log('Token expiring soon, refreshing...');
+        await refreshAccessToken();
+      }
+    };
+
+    // Check token expiry every 2 minutes
+    const interval = setInterval(checkTokenExpiry, 2 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated, token, refreshAccessToken]);
 
   // Fetch user details from backend
   const fetchUserDetails = useCallback(async () => {

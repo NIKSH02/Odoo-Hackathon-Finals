@@ -303,7 +303,14 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   const newAccessToken = generateAccessToken(user);
   setAuthCookies(res, newAccessToken, refreshToken);
-  res.json(new ApiResponse(200, null, "Token refreshed"));
+  
+  res.json(
+    new ApiResponse(
+      200, 
+      { token: newAccessToken }, 
+      "Token refreshed successfully"
+    )
+  );
 });
 
 // Login with OTP
@@ -411,6 +418,8 @@ const googleAuth = asyncHandler(async (req, res) => {
         }
         user.role = role;
       }
+      
+      // If user still doesn't have a role after all checks, the frontend will show role modal
       await user.save();
     } else {
       // Validate role for new user (only if provided)
@@ -446,12 +455,8 @@ const googleAuth = asyncHandler(async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken(
-      user._id,
-      user.email,
-      user.username
-    );
-    const refreshToken = generateRefreshToken(user._id);
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
     // Update refresh token in database
     user.refreshToken = refreshToken;
@@ -466,6 +471,7 @@ const googleAuth = asyncHandler(async (req, res) => {
       email: user.email,
       username: user.username,
       fullName: user.fullName,
+      role: user.role, // Include role in response
       profilePicture: user.profilePicture,
       isEmailVerified: user.isEmailVerified,
       authProvider: user.authProvider || "google",

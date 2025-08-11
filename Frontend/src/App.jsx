@@ -21,6 +21,7 @@ import SingleVenueDetailsPage from './pages/SingleVenueDetailsPage'
 import VenueBookingPage from './pages/VenueBookingPage'
 import { useAuth } from './hooks/useAuth';
 import SportsVenuesPage from './pages/SportsVenuesPage'
+import UserProfile from './components/UserProfile';
 
 // Inner component that uses the auth context
 const AppContent = () => {
@@ -103,11 +104,11 @@ const AppContent = () => {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/chat" 
+			<Route 
+              path="/profile" 
               element={
                 <ProtectedRoute requireAuth={true}>
-                  <ChatBox />
+                  <UserProfile />
                 </ProtectedRoute>
               } 
             />

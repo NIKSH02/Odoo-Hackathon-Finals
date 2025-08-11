@@ -100,8 +100,8 @@ const RegisterPage = () => {
         if (loginSuccess) {
           showSuccess('Google sign-up successful! Redirecting...');
           setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 1000);
+            navigate('/');
+          }, 300);
         } else {
           showError('Google sign-up failed. Please try again.');
         }
