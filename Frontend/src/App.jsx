@@ -11,7 +11,8 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import ChatBox from './components/ChatBox';
+import UserProfile from './components/UserProfile';
+
 import GoogleTranslate from './services/GoogleTranslate';
 
 
@@ -21,6 +22,7 @@ const App = () => {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <ThemeProvider>
         <ToastProvider>
+
           <AuthProvider>
             <Router>
               <ScrollToTop />
@@ -54,13 +56,14 @@ const App = () => {
                     } 
                   />
                   <Route 
-                    path="/chat" 
+                    path="/profile" 
                     element={
                       <ProtectedRoute requireAuth={true}>
-                        <ChatBox />
+                        <UserProfile />
                       </ProtectedRoute>
                     } 
                   />
+                
                 </Routes>
               </main>
             </div>
