@@ -3,6 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import { AuthContext } from './AuthContextProvider';
 import { getCurrentUserService } from '../services/userService';
 import { refreshTokenService } from '../services/authService';
+import { getDashboardRoute } from '../utils/roleRedirects';
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -214,6 +215,12 @@ const AuthProvider = ({ children }) => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  // Get dashboard route for current user
+  const getUserDashboardRoute = () => {
+    if (!user || !user.role) return '/';
+    return getDashboardRoute(user.role);
+  };
+
   const value = {
     user,
     token,
@@ -227,6 +234,7 @@ const AuthProvider = ({ children }) => {
     getAuthHeader,
     isTokenValid,
     fetchUserDetails,
+    getUserDashboardRoute,
   };
 
   return (

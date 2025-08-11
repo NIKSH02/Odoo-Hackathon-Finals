@@ -18,6 +18,7 @@ import ImageCarousel from "../components/ImageCarousel";
 import SportsAvailable from "../components/SportsAvailable";
 import VenueReviews from "../components/VenueReview";
 import Amenities from "../components/Amenities";
+import VenueMap from "../components/VenueMap";
 import { getVenueByIdService } from "../services/venueService";
 import { getSportsWithCourtCountsService } from "../services/courtService";
 
@@ -486,17 +487,14 @@ const SingleVenueDetailsPage = () => {
                 </p>
               </div>
 
-              <div className="bg-gray-100 h-40 rounded-xl flex items-center justify-center border-2 border-gray-200 hover:border-gray-300 transition-colors">
-                <div className="text-center">
-                  <div className="p-3 bg-white rounded-lg mb-2 inline-block">
-                    <MapPin size={24} className="text-gray-700" />
-                  </div>
-                  <p className="text-gray-600 font-medium">Interactive Map</p>
-                  <p className="text-sm text-gray-500">
-                    Click to view location
-                  </p>
-                </div>
-              </div>
+              {/* Interactive Map */}
+              <VenueMap 
+                venue={venue}
+                height="300px"
+                className="rounded-xl"
+                showFullAddress={false}
+                showDirections={true}
+              />
             </div>
           </div>
         </div>

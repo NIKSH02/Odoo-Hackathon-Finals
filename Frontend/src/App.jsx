@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ThemeProvider from "./context/ThemeContext";
 import ToastProvider from "./context/ToastContext";
@@ -9,13 +14,14 @@ import RoleSelectionModal from "./components/RoleSelectionModal";
 import ScrollToTop from "./components/ScrollToTop";
 import Navbar from "./components/Navbar";
 
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import OTPVerificationPage from './pages/OTPVerificationPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import AboutPage from './pages/AboutPage';
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import OTPVerificationPage from "./pages/OTPVerificationPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+// import DashboardPage from './pages/DashboardPage';
+import AdminDashboard from "./pages/AdminDashboard";
 
 import GoogleTranslate from "./services/GoogleTranslate";
 import SingleVenueDetailsPage from "./pages/SingleVenueDetailsPage";
@@ -23,12 +29,12 @@ import VenueBookingPage from "./pages/VenueBookingPage";
 import { useAuth } from "./hooks/useAuth";
 import SportsVenuesPage from "./pages/SportsVenuesPage";
 import UserProfile from "./components/UserProfile";
-import FacilityManagement from './pages/FacilityManagement';
-import FacilityOwnerDashboard from './pages/FacilityOwnerDashboard';
-import BookingOverview from './pages/BookingOverview';
-import OwnerProfile from './pages/OwnerProfile';
-import TimeSlotManagement from './pages/TimeSlotManagement';
-import CourtManagement from './pages/CourtManagement';
+import FacilityManagement from "./pages/FacilityManagement";
+import FacilityOwnerDashboard from "./pages/FacilityOwnerDashboard";
+import BookingOverview from "./pages/BookingOverview";
+import OwnerProfile from "./pages/OwnerProfile";
+import TimeSlotManagement from "./pages/TimeSlotManagement";
+import CourtManagement from "./pages/CourtManagement";
 
 // Inner component that uses the auth context
 const AppContent = () => {
@@ -47,7 +53,7 @@ const AppContent = () => {
             <Route
               path="/venues"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={["player"]}>
                   <SportsVenuesPage />
                 </ProtectedRoute>
               }
@@ -55,7 +61,7 @@ const AppContent = () => {
             <Route
               path="/venue/:id"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={["player"]}>
                   <SingleVenueDetailsPage />
                 </ProtectedRoute>
               }
@@ -63,7 +69,7 @@ const AppContent = () => {
             <Route
               path="/venue/:id/booking"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={["player"]}>
                   <VenueBookingPage />
                 </ProtectedRoute>
               }
@@ -108,10 +114,18 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             />
-			<Route 
-              path="/profile" 
+            <Route
+              path="/admin"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute requireAuth={true} allowedRoles={["player"]}>
                   <UserProfile />
                 </ProtectedRoute>
               }
@@ -163,6 +177,17 @@ const AppContent = () => {
                   <CourtManagement />
                 </ProtectedRoute>
               } 
+            />
+            <Route
+              path="/owner-profile"
+              element={
+                <ProtectedRoute
+                  requireAuth={true}
+                  requiredRole="facility_owner"
+                >
+                  <OwnerProfile />
+                </ProtectedRoute>
+              }
             />
           </Routes>
         </main>

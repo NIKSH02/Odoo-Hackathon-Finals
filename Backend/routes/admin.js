@@ -25,6 +25,11 @@ import {
   unsuspendUser,
   banUser,
   getUserBookingHistory,
+
+  // Court Management
+  getAllCourts,
+  updateCourtStatus,
+  getCourtAnalytics,
 } from "../controllers/adminController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { requireAdmin } from "../middlewares/roleMiddleware.js";
@@ -68,5 +73,12 @@ router.patch("/users/:userId/suspend", suspendUser);
 router.patch("/users/:userId/unsuspend", unsuspendUser);
 router.patch("/users/:userId/ban", banUser);
 router.get("/users/:userId/bookings", getUserBookingHistory);
+
+// ====================================
+// COURT MANAGEMENT ROUTES
+// ====================================
+router.get("/courts", getAllCourts);
+router.patch("/courts/:courtId/status", updateCourtStatus);
+router.get("/courts/analytics", getCourtAnalytics);
 
 export default router;
