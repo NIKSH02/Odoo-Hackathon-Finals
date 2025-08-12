@@ -3,6 +3,16 @@
 ### DRIVE VIDEO LINK : https://drive.google.com/drive/folders/1K9HuTbBM0QSi2E6WdFwWrx9C-8IlkXAq?usp=sharing 
 ### YT VIDEO LINK : https://youtu.be/G03klEB_giI
 
+## 🏟️ External API'S
+
+- **Cloudinary API** 
+- **OAuth API**
+- **MAPBOX API**
+- **OpenWeather API**
+- **Google Translate API**
+- **Razor Pay API**
+- 
+
 A comprehensive sports venue booking platform that connects sports enthusiasts with facility owners, enabling seamless venue discovery, booking, and management.
 
 ## 🏟️ Overview
