@@ -12,6 +12,7 @@ import {
   removeBlockedSlot,
   checkCourtAvailability,
   getCourtAvailabilityBySport,
+  getCourtSchedule,
   getSportsWithCourtCounts,
   bookCourt,
 } from "../controllers/courtController.js";
@@ -29,6 +30,7 @@ router.get("/venue/:venueId/sports", getSportsWithCourtCounts);
 router.get("/venue/:venueId/availability", getCourtAvailabilityBySport);
 router.get("/:courtId", getCourtById);
 router.get("/:courtId/availability", checkCourtAvailability);
+router.get("/:courtId/schedule", getCourtSchedule);
 
 // Protected routes (require authentication)
 // Facility Owner routes

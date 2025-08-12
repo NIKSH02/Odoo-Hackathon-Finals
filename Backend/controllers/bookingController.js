@@ -57,41 +57,91 @@ const createBooking = asyncHandler(async (req, res) => {
   const courtStart = courtDoc.operatingHours[dayOfWeek].start;
   const courtEnd = courtDoc.operatingHours[dayOfWeek].end;
 
-  if (timeSlot.startTime < courtStart || timeSlot.endTime > courtEnd) {
+  // Helper function to convert time string to minutes for accurate comparison
+  const timeToMinutes = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Helper function to calculate end time based on start time and duration
+  const calculateEndTime = (startTime, duration) => {
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = startMinutes + (duration * 60);
+    const hours = Math.floor(endMinutes / 60);
+    const minutes = endMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  const requestStartMinutes = timeToMinutes(timeSlot.startTime);
+  const requestEndMinutes = timeToMinutes(timeSlot.endTime);
+  const courtStartMinutes = timeToMinutes(courtStart);
+  const courtEndMinutes = timeToMinutes(courtEnd);
+
+  if (requestStartMinutes < courtStartMinutes || requestEndMinutes > courtEndMinutes) {
     throw new ApiError(400, `Court operates from ${courtStart} to ${courtEnd}`);
   }
 
   // Check for blocked slots
-  const blockedSlot = courtDoc.blockedSlots.find(
-    (slot) =>
-      slot.date.toDateString() === bookingDateObj.toDateString() &&
-      ((timeSlot.startTime >= slot.startTime &&
-        timeSlot.startTime < slot.endTime) ||
-        (timeSlot.endTime > slot.startTime &&
-          timeSlot.endTime <= slot.endTime) ||
-        (timeSlot.startTime <= slot.startTime &&
-          timeSlot.endTime >= slot.endTime))
-  );
+  const blockedSlot = courtDoc.blockedSlots.find((slot) => {
+    if (slot.date.toDateString() !== bookingDateObj.toDateString()) return false;
+    
+    const slotStartMinutes = timeToMinutes(slot.startTime);
+    const slotEndMinutes = timeToMinutes(slot.endTime);
+    
+    // Check for overlap
+    return (
+      (requestStartMinutes >= slotStartMinutes && requestStartMinutes < slotEndMinutes) ||
+      (requestEndMinutes > slotStartMinutes && requestEndMinutes <= slotEndMinutes) ||
+      (requestStartMinutes <= slotStartMinutes && requestEndMinutes >= slotEndMinutes)
+    );
+  });
 
   if (blockedSlot) {
     throw new ApiError(400, `Court is blocked for ${blockedSlot.reason}`);
   }
 
-  // Check for existing bookings
-  const existingBooking = await Booking.findOne({
+  // Check for duplicate booking by the same user for the same court and time slot
+  const duplicateUserBooking = await Booking.findOne({
+    user: req.user.id,
     court,
     bookingDate: bookingDateObj,
     status: { $in: ["pending", "confirmed"] },
-    $or: [
-      {
-        "timeSlot.startTime": { $lt: timeSlot.endTime },
-        "timeSlot.endTime": { $gt: timeSlot.startTime },
-      },
-    ],
+    "timeSlot.startTime": timeSlot.startTime,
+    "timeSlot.endTime": timeSlot.endTime,
   });
 
-  if (existingBooking) {
-    throw new ApiError(400, "Court is already booked for this time slot");
+  if (duplicateUserBooking) {
+    throw new ApiError(400, "You have already booked this court for the same time slot");
+  }
+
+  // Check for existing bookings (time slot conflicts) with proper time overlap detection
+  // Get ALL bookings for this court on this date
+  const existingBookings = await Booking.find({
+    court,
+    bookingDate: bookingDateObj,
+    status: { $in: ["pending", "confirmed"] },
+  });
+
+  // Check each existing booking for time overlap
+  for (const existingBooking of existingBookings) {
+    const bookingStartMinutes = timeToMinutes(existingBooking.timeSlot.startTime);
+    const bookingEndMinutes = timeToMinutes(existingBooking.timeSlot.endTime);
+    
+    // Check for time overlap using minutes
+    const hasOverlap = (
+      (requestStartMinutes < bookingEndMinutes) && 
+      (requestEndMinutes > bookingStartMinutes)
+    );
+
+    if (hasOverlap) {
+      throw new ApiError(400, `Court is already booked from ${existingBooking.timeSlot.startTime} to ${existingBooking.timeSlot.endTime}`);
+    }
+  }
+
+  // Validate timeSlot consistency with duration
+  const calculatedEndTime = calculateEndTime(timeSlot.startTime, duration);
+  if (timeSlot.endTime !== calculatedEndTime) {
+    throw new ApiError(400, `Time slot end time should be ${calculatedEndTime} for ${duration} hour(s) duration`);
   }
 
   // Calculate pricing
@@ -136,8 +186,12 @@ const createBooking = asyncHandler(async (req, res) => {
     },
     equipment: selectedEquipment,
     specialRequests,
+    status: "payment_pending", // Start with payment pending
+    paymentStatus: "pending",
     paymentDetails: {
       paymentMethod: paymentMethod || "card",
+      paymentGateway: "razorpay",
+      retryCount: 0,
     },
   });
 
@@ -149,9 +203,17 @@ const createBooking = asyncHandler(async (req, res) => {
     { path: "user", select: "fullName email" },
   ]);
 
-  res
-    .status(201)
-    .json(new ApiResponse(201, booking, "Booking created successfully"));
+  res.status(201).json(
+    new ApiResponse(
+      201,
+      {
+        booking,
+        nextStep: "payment",
+        message: "Booking created successfully. Please complete payment to confirm.",
+      },
+      "Booking created successfully"
+    )
+  );
 });
 
 // Get user bookings
@@ -574,10 +636,10 @@ const getVenueBookingsByDate = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Venue not found");
   }
 
-  // Parse the date
-  const searchDate = new Date(date);
-  const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
-  const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
+  // Parse the date and ensure it's treated as local date
+  const searchDate = new Date(date + 'T00:00:00');
+  const startOfDay = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(searchDate.getFullYear(), searchDate.getMonth(), searchDate.getDate(), 23, 59, 59, 999);
 
   // Find all bookings for this venue on the specified date
   const bookings = await Booking.find({

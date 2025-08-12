@@ -47,23 +47,34 @@ const bookingSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled", "completed", "no_show"],
-      default: "pending",
+      enum: ["pending", "confirmed", "cancelled", "completed", "no_show", "payment_pending"],
+      default: "payment_pending",
     },
     paymentStatus: {
       type: String,
-      enum: ["pending", "completed", "failed", "refunded"],
+      enum: ["pending", "completed", "failed", "refund_pending", "refunded"],
       default: "pending",
     },
     paymentDetails: {
       transactionId: String,
+      razorpayOrderId: String,
+      razorpayPaymentId: String,
+      razorpaySignature: String,
       paymentMethod: {
         type: String,
-        enum: ["card", "upi", "wallet", "cash"],
+        enum: ["card", "upi", "wallet", "cash", "netbanking"],
         default: "card",
       },
-      paymentGateway: String,
+      paymentGateway: {
+        type: String,
+        default: "razorpay",
+      },
       paidAt: Date,
+      failureReason: String,
+      retryCount: {
+        type: Number,
+        default: 0,
+      },
     },
     cancellation: {
       cancelledAt: Date,

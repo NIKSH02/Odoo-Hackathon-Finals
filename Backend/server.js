@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+import { scheduleBookingCleanup } from "./utils/bookingCleanup.js";
 import ApiError from "./utils/ApiError.js";
 import ApiResponse from './utils/ApiResponse.js';
 import authRoutes from "./routes/auth.js";
@@ -15,6 +16,7 @@ import searchRoutes from "./routes/search.js";
 import adminRoutes from "./routes/admin.js";
 import locationRoutes from "./routes/location.js";
 import mapRoutes from "./routes/map.js";
+import paymentRoutes from "./routes/payment.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 
@@ -63,6 +65,7 @@ app.use("/api/search", searchRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/map", mapRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // 404 Route Not Found handler
 app.use((req, res, next) => {
@@ -81,6 +84,9 @@ app.use((err, req, res, next) => {
 // Start Server
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
+  
+  // Start booking cleanup scheduler
+  scheduleBookingCleanup();
 });
 
 export default app;

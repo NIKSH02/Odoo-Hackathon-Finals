@@ -25,6 +25,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import GoogleTranslate from "./services/GoogleTranslate";
 import SingleVenueDetailsPage from "./pages/SingleVenueDetailsPage";
 import VenueBookingPage from "./pages/VenueBookingPage";
+import PaymentPage from "./pages/PaymentPage";
 import { useAuth } from "./hooks/useAuth";
 import SportsVenuesPage from "./pages/SportsVenuesPage";
 import UserProfile from "./components/UserProfile";
@@ -68,6 +69,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute requireAuth={true} allowedRoles={["player"]}>
                   <VenueBookingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/payment/:bookingId"
+              element={
+                <ProtectedRoute requireAuth={true} allowedRoles={["player"]}>
+                  <PaymentPage />
                 </ProtectedRoute>
               }
             />

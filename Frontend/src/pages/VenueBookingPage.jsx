@@ -24,14 +24,14 @@ import {
 
 // Calendar Modal Component
 const CalendarModal = ({ isOpen, onClose, selectedDate, onDateSelect }) => {
-  if (!isOpen) return null;
-
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
   const [displayMonth, setDisplayMonth] = useState(currentMonth);
   const [displayYear, setDisplayYear] = useState(currentYear);
+
+  if (!isOpen) return null;
 
   const months = [
     "Jan",
@@ -219,6 +219,7 @@ const TimeSlotModal = ({
           venue._id,
           selectedDate
         );
+        console.log('Fetched bookings response:', response?.data);
         setExistingBookings(response?.data?.bookings || []);
       } catch (error) {
         console.error("Error fetching bookings:", error);
@@ -290,26 +291,55 @@ const TimeSlotModal = ({
       // Disable past times if today
       const isPastTime = isToday && slotDate.getTime() <= now.getTime();
 
-      // Check if this slot conflicts with existing bookings
-      const isUnavailable = existingBookings.some((booking) => {
-        // Only check bookings for the selected sport if specified
-        if (selectedSport && booking.sport !== selectedSport) return false;
+      // Check if this slot conflicts with existing bookings for the selected sport
+      const sportSpecificBookings = existingBookings.filter((booking) => {
+        // If sport is selected, only consider bookings for that sport
+        if (selectedSport) {
+          return booking.court?.sportType === selectedSport;
+        }
+        return true; // If no sport selected, consider all bookings
+      });
 
-        const bookingStartTime = booking.startTime; // e.g., "09:00"
-        const bookingEndTime = booking.endTime; // e.g., "10:00"
+      // Count how many courts of the selected sport type are booked at this time
+      const bookedCourtsCount = sportSpecificBookings.filter((booking) => {
+        const bookingStartTime = booking.timeSlot?.startTime; // e.g., "09:00"
+        const bookingEndTime = booking.timeSlot?.endTime; // e.g., "10:00"
+
+        if (!bookingStartTime || !bookingEndTime) return false;
 
         const bookingStartHour = parseInt(bookingStartTime.split(":")[0]);
         const bookingEndHour = parseInt(bookingEndTime.split(":")[0]);
 
         // Check if the current hour slot overlaps with the booking
         return hour >= bookingStartHour && hour < bookingEndHour;
-      });
+      }).length;
+
+      // Get total courts available for the selected sport
+      const sportsDataArray = Array.isArray(venue?.sportsWithCounts) ? venue.sportsWithCounts : 
+                              (venue?.sportsWithCounts?.sports || []);
+      console.log('Sports data array:', sportsDataArray);
+      console.log('Selected sport:', selectedSport);
+      
+      const sportData = sportsDataArray.find(s => s._id === selectedSport);
+      const totalCourtsForSport = sportData?.courtCount || 0;
+      
+      console.log(`Slot ${apiTime}: Booked courts: ${bookedCourtsCount}, Total courts: ${totalCourtsForSport}`);
+
+      // Determine if slot is available - only consider it unavailable if we have no courts available
+      const isFullyBooked = selectedSport && totalCourtsForSport > 0 && (bookedCourtsCount >= totalCourtsForSport);
+      const isUnavailable = isPastTime || isFullyBooked;
+
+      let reason = null;
+      if (isPastTime) reason = "Past time";
+      else if (isFullyBooked) reason = `All ${selectedSport} courts booked`;
 
       slots.push({
         time: displayTime,
         value: apiTime,
-        disabled: isPastTime || isUnavailable,
-        reason: isPastTime ? "Past time" : isUnavailable ? "Unavailable" : null,
+        disabled: isUnavailable,
+        reason: reason,
+        availableCourts: selectedSport ? Math.max(0, totalCourtsForSport - bookedCourtsCount) : 0,
+        totalCourts: totalCourtsForSport,
       });
     }
 
@@ -402,7 +432,27 @@ const TimeSlotModal = ({
                         : "bg-white border-gray-200 hover:border-gray-400 hover:bg-gray-50 hover:shadow-sm"
                     }`}
                   >
-                    {slot.time}
+                    <div className="flex flex-col items-center">
+                      <span>{slot.time}</span>
+                      {selectedSport && slot.totalCourts > 0 && (
+                        <span className={`text-xs mt-1 ${
+                          slot.disabled 
+                            ? 'text-gray-400' 
+                            : slot.availableCourts === 0 
+                              ? 'text-red-500' 
+                              : slot.availableCourts <= 2 
+                                ? 'text-orange-500' 
+                                : 'text-green-500'
+                        }`}>
+                          {slot.availableCourts}/{slot.totalCourts} courts
+                        </span>
+                      )}
+                      {slot.reason && (
+                        <span className="text-xs text-gray-400 mt-1">
+                          {slot.reason}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -538,7 +588,11 @@ const VenueBookingPage = () => {
 
   const formatDateForAPI = (date) => {
     if (!date) return "";
-    return date.toISOString().split("T")[0];
+    // Use local date formatting to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const formatAddress = (address) => {
@@ -588,16 +642,20 @@ const VenueBookingPage = () => {
           endTime: calculateEndTime(selectedTime, duration),
         },
         duration,
-        paymentMethod: "cash", // You can make this dynamic
+        paymentMethod: "card", // Default to card for Razorpay
       };
 
       const response = await createBookingService(bookingData);
+      const booking = response.data.data.booking;
 
-      // Show success message
-      alert("Booking created successfully! Redirecting to your bookings...");
+      // Navigate to payment page with booking details
+      navigate(`/payment/${booking._id}`, { 
+        state: { 
+          booking,
+          returnUrl: "/profile?tab=bookings"
+        } 
+      });
 
-      // Navigate to user profile bookings section
-      navigate("/profile?tab=bookings");
     } catch (err) {
       console.error("Error creating booking:", err);
       alert(err.response?.data?.message || "Failed to create booking");
@@ -935,7 +993,8 @@ const VenueBookingPage = () => {
                       !selectedCourt ||
                       !selectedDate ||
                       !selectedTime ||
-                      bookingLoading
+                      bookingLoading ||
+                      (courtAvailability && courtAvailability.statusCounts.available === 0)
                     }
                     className="w-full bg-black text-white py-4 px-8 rounded-xl font-bold hover:bg-gray-800 transition-all duration-200 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
                   >
@@ -944,6 +1003,8 @@ const VenueBookingPage = () => {
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                         Processing...
                       </div>
+                    ) : courtAvailability && courtAvailability.statusCounts.available === 0 ? (
+                      "No Courts Available - Choose Different Time"
                     ) : (
                       `Continue to Payment - ₹${totalPrice.toLocaleString()}`
                     )}
@@ -975,6 +1036,7 @@ const VenueBookingPage = () => {
         onTimeSelect={(time) => {
           setSelectedTime(time);
           setSelectedCourt(""); // Reset court selection when time changes
+          setShowTimeSlots(false); // Close the modal after selection
         }}
         selectedDate={selectedDate}
         venue={venue}

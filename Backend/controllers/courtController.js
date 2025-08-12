@@ -229,7 +229,13 @@ const getCourtAvailabilityBySport = asyncHandler(async (req, res) => {
     );
   }
 
-  const bookingDate = new Date(date);
+  // Helper function to convert time string to minutes for accurate comparison
+  const timeToMinutes = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const bookingDate = new Date(date + 'T00:00:00');
   const dayOfWeek = [
     "sunday",
     "monday",
@@ -239,6 +245,9 @@ const getCourtAvailabilityBySport = asyncHandler(async (req, res) => {
     "friday",
     "saturday",
   ][bookingDate.getDay()];
+
+  const requestStartMinutes = timeToMinutes(startTime);
+  const requestEndMinutes = timeToMinutes(endTime);
 
   // Get all courts of the specified sport type, sorted by court number
   const allCourts = await Court.find({
@@ -262,50 +271,68 @@ const getCourtAvailabilityBySport = asyncHandler(async (req, res) => {
 
     // Check operating hours
     const courtHours = court.operatingHours[dayOfWeek];
-    if (
-      !courtHours.isAvailable ||
-      startTime < courtHours.start ||
-      endTime > courtHours.end
-    ) {
+    if (!courtHours.isAvailable) {
       status = "unavailable";
-      reason = `Court operates from ${courtHours.start} to ${courtHours.end}`;
+      reason = "Court not available on this day";
     } else {
-      // Check for blocked slots
-      const blockedSlot = court.blockedSlots.find(
-        (slot) =>
-          slot.date.toDateString() === bookingDate.toDateString() &&
-          ((startTime >= slot.startTime && startTime < slot.endTime) ||
-            (endTime > slot.startTime && endTime <= slot.endTime) ||
-            (startTime <= slot.startTime && endTime >= slot.endTime))
-      );
-
-      if (blockedSlot) {
-        status = "blocked";
-        reason = `Blocked for ${blockedSlot.reason}`;
+      const courtStartMinutes = timeToMinutes(courtHours.start);
+      const courtEndMinutes = timeToMinutes(courtHours.end);
+      
+      if (requestStartMinutes < courtStartMinutes || requestEndMinutes > courtEndMinutes) {
+        status = "unavailable";
+        reason = `Court operates from ${courtHours.start} to ${courtHours.end}`;
       } else {
-        // Check for existing bookings
-        const existingBooking = await Booking.findOne({
-          court: court._id,
-          bookingDate,
-          status: { $in: ["pending", "confirmed"] },
-          $or: [
-            {
-              "timeSlot.startTime": { $lt: endTime },
-              "timeSlot.endTime": { $gt: startTime },
-            },
-          ],
-        }).populate("user", "fullName profilePicture");
+        // Check for blocked slots
+        const blockedSlot = court.blockedSlots.find((slot) => {
+          if (slot.date.toDateString() !== bookingDate.toDateString()) return false;
+          
+          const slotStartMinutes = timeToMinutes(slot.startTime);
+          const slotEndMinutes = timeToMinutes(slot.endTime);
+          
+          // Check for overlap
+          return (
+            (requestStartMinutes >= slotStartMinutes && requestStartMinutes < slotEndMinutes) ||
+            (requestEndMinutes > slotStartMinutes && requestEndMinutes <= slotEndMinutes) ||
+            (requestStartMinutes <= slotStartMinutes && requestEndMinutes >= slotEndMinutes)
+          );
+        });
 
-        if (existingBooking) {
-          status = "booked";
-          bookedBy = existingBooking.user;
-          bookingDetails = {
-            bookingId: existingBooking._id,
-            timeSlot: existingBooking.timeSlot,
-            bookingDate: existingBooking.bookingDate,
-            totalAmount: existingBooking.totalAmount,
-            status: existingBooking.status,
-          };
+        if (blockedSlot) {
+          status = "blocked";
+          reason = `Blocked for ${blockedSlot.reason}`;
+        } else {
+          // Check for existing bookings with proper time overlap detection
+          // Get ALL bookings for this court on this date
+          const existingBookings = await Booking.find({
+            court: court._id,
+            bookingDate,
+            status: { $in: ["pending", "confirmed"] },
+          }).populate("user", "fullName profilePicture");
+
+          // Check each booking for time overlap
+          for (const existingBooking of existingBookings) {
+            const bookingStartMinutes = timeToMinutes(existingBooking.timeSlot.startTime);
+            const bookingEndMinutes = timeToMinutes(existingBooking.timeSlot.endTime);
+            
+            // Check for time overlap
+            const hasOverlap = (
+              (requestStartMinutes < bookingEndMinutes) && 
+              (requestEndMinutes > bookingStartMinutes)
+            );
+
+            if (hasOverlap) {
+              status = "booked";
+              bookedBy = existingBooking.user;
+              bookingDetails = {
+                bookingId: existingBooking._id,
+                timeSlot: existingBooking.timeSlot,
+                bookingDate: existingBooking.bookingDate,
+                totalAmount: existingBooking.pricing?.totalAmount,
+                status: existingBooking.status,
+              };
+              break; // Exit loop once we find a conflict
+            }
+          }
         }
       }
     }
@@ -630,13 +657,27 @@ const checkCourtAvailability = asyncHandler(async (req, res) => {
   }
 
   // Check for blocked slots
-  const blockedSlot = court.blockedSlots.find(
-    (slot) =>
-      slot.date.toDateString() === bookingDate.toDateString() &&
-      ((startTime >= slot.startTime && startTime < slot.endTime) ||
-        (endTime > slot.startTime && endTime <= slot.endTime) ||
-        (startTime <= slot.startTime && endTime >= slot.endTime))
-  );
+  const blockedSlot = court.blockedSlots.find((slot) => {
+    if (slot.date.toDateString() !== bookingDate.toDateString()) return false;
+    
+    // Helper function to convert time string to minutes for accurate comparison
+    const timeToMinutes = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    const requestStartMinutes = timeToMinutes(startTime);
+    const requestEndMinutes = timeToMinutes(endTime);
+    const slotStartMinutes = timeToMinutes(slot.startTime);
+    const slotEndMinutes = timeToMinutes(slot.endTime);
+    
+    // Check for overlap
+    return (
+      (requestStartMinutes >= slotStartMinutes && requestStartMinutes < slotEndMinutes) ||
+      (requestEndMinutes > slotStartMinutes && requestEndMinutes <= slotEndMinutes) ||
+      (requestStartMinutes <= slotStartMinutes && requestEndMinutes >= slotEndMinutes)
+    );
+  });
 
   if (blockedSlot) {
     return res.status(200).json(
@@ -647,26 +688,43 @@ const checkCourtAvailability = asyncHandler(async (req, res) => {
     );
   }
 
-  // Check for existing bookings
-  const existingBooking = await Booking.findOne({
+  // Helper function to convert time string to minutes for accurate comparison
+  const timeToMinutes = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Check for existing bookings with proper time overlap detection
+  // Get ALL bookings for this court on this date
+  const existingBookings = await Booking.find({
     court: courtId,
     bookingDate,
     status: { $in: ["pending", "confirmed"] },
-    $or: [
-      {
-        "timeSlot.startTime": { $lt: endTime },
-        "timeSlot.endTime": { $gt: startTime },
-      },
-    ],
   });
 
-  if (existingBooking) {
-    return res.status(200).json(
-      new ApiResponse(200, {
-        available: false,
-        reason: "Court is already booked for this time slot",
-      })
+  // Check each booking for time overlap
+  for (const existingBooking of existingBookings) {
+    const bookingStartMinutes = timeToMinutes(existingBooking.timeSlot.startTime);
+    const bookingEndMinutes = timeToMinutes(existingBooking.timeSlot.endTime);
+    
+    // Check for time overlap using minutes
+    const hasOverlap = (
+      (requestStartMinutes < bookingEndMinutes) && 
+      (requestEndMinutes > bookingStartMinutes)
     );
+
+    if (hasOverlap) {
+      return res.status(200).json(
+        new ApiResponse(200, {
+          available: false,
+          reason: "Court is already booked for this time slot",
+          conflictingBooking: {
+            startTime: existingBooking.timeSlot.startTime,
+            endTime: existingBooking.timeSlot.endTime,
+          },
+        })
+      );
+    }
   }
 
   res.status(200).json(
@@ -678,6 +736,140 @@ const checkCourtAvailability = asyncHandler(async (req, res) => {
       },
       "Court is available"
     )
+  );
+});
+
+// Get detailed court schedule for a specific date (shows all bookings and available slots)
+const getCourtSchedule = asyncHandler(async (req, res) => {
+  const { courtId } = req.params;
+  const { date } = req.query;
+
+  if (!date) {
+    throw new ApiError(400, "Date is required");
+  }
+
+  const court = await Court.findById(courtId);
+  if (!court) {
+    throw new ApiError(404, "Court not found");
+  }
+
+  const bookingDate = new Date(date);
+  const dayOfWeek = [
+    "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
+  ][bookingDate.getDay()];
+
+  // Get court operating hours for this day
+  const courtHours = court.operatingHours[dayOfWeek];
+  
+  if (!courtHours.isAvailable) {
+    return res.status(200).json(
+      new ApiResponse(200, {
+        court: { _id: court._id, name: court.name, courtNumber: court.courtNumber },
+        date,
+        isOpen: false,
+        reason: "Court not available on this day",
+        bookings: [],
+        blockedSlots: [],
+        availableSlots: []
+      })
+    );
+  }
+
+  // Get all bookings for this court on this date
+  const bookings = await Booking.find({
+    court: courtId,
+    bookingDate,
+    status: { $in: ["pending", "confirmed", "completed"] },
+  }).populate("user", "fullName email profilePicture")
+    .sort({ "timeSlot.startTime": 1 });
+
+  // Get blocked slots for this date
+  const blockedSlots = court.blockedSlots.filter(
+    slot => slot.date.toDateString() === bookingDate.toDateString()
+  );
+
+  // Calculate available time slots (in 30-minute intervals)
+  const timeToMinutes = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const minutesToTime = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
+  const startMinutes = timeToMinutes(courtHours.start);
+  const endMinutes = timeToMinutes(courtHours.end);
+  const availableSlots = [];
+
+  // Generate 30-minute slots and check availability
+  for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes += 30) {
+    const slotStart = minutesToTime(currentMinutes);
+    const slotEnd = minutesToTime(currentMinutes + 30);
+    
+    let isAvailable = true;
+    let conflictReason = null;
+
+    // Check against bookings
+    for (const booking of bookings) {
+      const bookingStartMinutes = timeToMinutes(booking.timeSlot.startTime);
+      const bookingEndMinutes = timeToMinutes(booking.timeSlot.endTime);
+      
+      if (currentMinutes < bookingEndMinutes && (currentMinutes + 30) > bookingStartMinutes) {
+        isAvailable = false;
+        conflictReason = `Booked by ${booking.user.fullName}`;
+        break;
+      }
+    }
+
+    // Check against blocked slots
+    if (isAvailable) {
+      for (const blockedSlot of blockedSlots) {
+        const blockedStartMinutes = timeToMinutes(blockedSlot.startTime);
+        const blockedEndMinutes = timeToMinutes(blockedSlot.endTime);
+        
+        if (currentMinutes < blockedEndMinutes && (currentMinutes + 30) > blockedStartMinutes) {
+          isAvailable = false;
+          conflictReason = `Blocked: ${blockedSlot.reason}`;
+          break;
+        }
+      }
+    }
+
+    availableSlots.push({
+      startTime: slotStart,
+      endTime: slotEnd,
+      available: isAvailable,
+      reason: conflictReason
+    });
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, {
+      court: {
+        _id: court._id,
+        name: court.name,
+        courtNumber: court.courtNumber,
+        sportType: court.sportType,
+        pricePerHour: court.pricePerHour
+      },
+      date,
+      isOpen: true,
+      operatingHours: courtHours,
+      bookings: bookings.map(booking => ({
+        _id: booking._id,
+        user: booking.user,
+        timeSlot: booking.timeSlot,
+        duration: booking.duration,
+        status: booking.status,
+        totalAmount: booking.pricing?.totalAmount
+      })),
+      blockedSlots,
+      availableSlots: availableSlots.filter(slot => slot.available),
+      timeSlots: availableSlots
+    }, "Court schedule retrieved successfully")
   );
 });
 
@@ -812,6 +1004,7 @@ export {
   removeBlockedSlot,
   checkCourtAvailability,
   getCourtAvailabilityBySport,
+  getCourtSchedule,
   getSportsWithCourtCounts,
   bookCourt,
 };
