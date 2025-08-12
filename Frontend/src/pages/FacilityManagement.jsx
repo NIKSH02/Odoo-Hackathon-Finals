@@ -1525,9 +1525,7 @@ const FacilityManagement = () => {
           photos: formData.photos.map((photo) => photo.file).filter(Boolean),
         };
 
-        console.log("Sending venue data:", venueData); // Debug log
-
-        const response = await venueService.createVenueService(venueData);
+        const response = await venueService.createVenueService(newVenue);
 
         if (response.data && response.data.data) {
           // Add new venue to list (it will have status 'pending')

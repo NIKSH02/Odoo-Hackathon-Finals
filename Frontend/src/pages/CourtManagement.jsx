@@ -22,6 +22,404 @@ import {
 } from "../services/courtService";
 import { getOwnerVenuesService } from "../services/venueService";
 
+// CourtModal Component (moved outside to prevent re-creation on every render)
+const CourtModal = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  formData, 
+  setFormData, 
+  handleInputChange, 
+  handleNestedInputChange, 
+  handleOperatingHoursChange, 
+  venues, 
+  loading, 
+  sportsOptions, 
+  featuresOptions, 
+  equipmentOptions, 
+  days, 
+  handleSave, 
+  isFormValid, 
+  editingCourt 
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Basic Information */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Basic Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Court Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="e.g., Badminton Court 1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Venue *
+                </label>
+                {!Array.isArray(venues) || venues.length === 0 ? (
+                  <div className="w-full px-4 py-3 border border-yellow-300 rounded-lg bg-yellow-50">
+                    <p className="text-sm text-yellow-700">
+                      {loading ? "Loading venues..." : 
+                      "No venues found. Please add a venue first in Facility Management. Note: Venues must be approved by admin before you can add courts."}
+                    </p>
+                    {venues.length === 0 && !loading && (
+                      <p className="text-xs text-yellow-600 mt-1">
+                        Check browser console for debug information.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <select
+                    value={formData.venue}
+                    onChange={(e) =>
+                      handleInputChange("venue", e.target.value)
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  >
+                    <option value="">Select Venue</option>
+                    {Array.isArray(venues) &&
+                      venues.map((venue) => (
+                        <option key={venue._id} value={venue._id}>
+                          {venue.name}
+                        </option>
+                      ))}
+                  </select>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sport Type *
+                </label>
+                <select
+                  value={formData.sportType}
+                  onChange={(e) =>
+                    handleInputChange("sportType", e.target.value)
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                >
+                  <option value="">Select Sport</option>
+                  {sportsOptions.map((sport) => (
+                    <option key={sport.value} value={sport.value}>
+                      {sport.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Price per Hour (₹) *
+                </label>
+                <input
+                  type="number"
+                  value={formData.pricePerHour}
+                  onChange={(e) =>
+                    handleInputChange("pricePerHour", e.target.value)
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="300"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Capacity (persons) *
+                </label>
+                <input
+                  type="number"
+                  value={formData.capacity}
+                  onChange={(e) =>
+                    handleInputChange("capacity", e.target.value)
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="4"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Dimensions */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Dimensions
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Length
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.dimensions.length}
+                  onChange={(e) =>
+                    handleNestedInputChange(
+                      "dimensions",
+                      "length",
+                      e.target.value ? parseFloat(e.target.value) : ""
+                    )
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="13.4"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Width
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.dimensions.width}
+                  onChange={(e) =>
+                    handleNestedInputChange(
+                      "dimensions",
+                      "width",
+                      e.target.value ? parseFloat(e.target.value) : ""
+                    )
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="6.1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Unit
+                </label>
+                <select
+                  value={formData.dimensions.unit}
+                  onChange={(e) =>
+                    handleNestedInputChange(
+                      "dimensions",
+                      "unit",
+                      e.target.value
+                    )
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                >
+                  <option value="meters">Meters</option>
+                  <option value="feet">Feet</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Features & Equipment */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Features & Equipment
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Features
+                </label>
+                <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  {featuresOptions.map((feature) => (
+                    <label
+                      key={feature.value}
+                      className="flex items-center space-x-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.features.includes(feature.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              features: [...prev.features, feature.value],
+                            }));
+                          } else {
+                            setFormData((prev) => ({
+                              ...prev,
+                              features: prev.features.filter(
+                                (f) => f !== feature.value
+                              ),
+                            }));
+                          }
+                        }}
+                        className="rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {feature.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Equipment
+                </label>
+                <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  {equipmentOptions.map((equipment) => (
+                    <label
+                      key={equipment.value}
+                      className="flex items-center space-x-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.equipment.some(e => 
+                          typeof e === 'string' ? e === equipment.value : e.name === equipment.value
+                        )}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              equipment: [...prev.equipment, { 
+                                name: equipment.value, 
+                                available: true, 
+                                rentPrice: 0 
+                              }],
+                            }));
+                          } else {
+                            setFormData((prev) => ({
+                              ...prev,
+                              equipment: prev.equipment.filter(
+                                (e) => typeof e === 'string' ? e !== equipment.value : e.name !== equipment.value
+                              ),
+                            }));
+                          }
+                        }}
+                        className="rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {equipment.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Operating Hours */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Operating Hours
+            </h3>
+            <div className="space-y-3">
+              {days.map((day) => (
+                <div
+                  key={day}
+                  className="flex items-center space-x-4 p-3 bg-white rounded-lg"
+                >
+                  <div className="w-20">
+                    <span className="text-sm font-medium text-gray-700 capitalize">
+                      {day}
+                    </span>
+                  </div>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={
+                        formData.operatingHours[day]?.isAvailable ?? true
+                      }
+                      onChange={(e) =>
+                        handleOperatingHoursChange(
+                          day,
+                          "isAvailable",
+                          e.target.checked
+                        )
+                      }
+                      className="rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <span className="text-sm text-gray-600">Open</span>
+                  </label>
+                  {formData.operatingHours[day]?.isAvailable && (
+                    <>
+                      <div>
+                        <input
+                          type="time"
+                          value={
+                            formData.operatingHours[day]?.start || "06:00"
+                          }
+                          onChange={(e) =>
+                            handleOperatingHoursChange(
+                              day,
+                              "start",
+                              e.target.value
+                            )
+                          }
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black focus:border-black"
+                        />
+                      </div>
+                      <span className="text-gray-500">to</span>
+                      <div>
+                        <input
+                          type="time"
+                          value={formData.operatingHours[day]?.end || "22:00"}
+                          onChange={(e) =>
+                            handleOperatingHoursChange(
+                              day,
+                              "end",
+                              e.target.value
+                            )
+                          }
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black focus:border-black"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex justify-end space-x-4">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading || !isFormValid()}
+            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>
+              {loading
+                ? "Saving..."
+                : `${editingCourt ? "Update" : "Save"} Court`}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CourtManagement = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [courts, setCourts] = useState([]);
@@ -72,15 +470,10 @@ const CourtManagement = () => {
     { value: "indoor", label: "Indoor" },
     { value: "outdoor", label: "Outdoor" },
     { value: "air_conditioned", label: "Air Conditioned" },
+    { value: "floodlights", label: "Floodlights" },
+    { value: "synthetic_turf", label: "Synthetic Turf" },
     { value: "wooden_floor", label: "Wooden Floor" },
-    { value: "synthetic_surface", label: "Synthetic Surface" },
-    { value: "lighting", label: "Floodlights" },
-    { value: "parking", label: "Parking Available" },
-    { value: "changing_rooms", label: "Changing Rooms" },
-    { value: "shower_facilities", label: "Shower Facilities" },
-    { value: "spectator_seating", label: "Spectator Seating" },
-    { value: "sound_system", label: "Sound System" },
-    { value: "scoreboard", label: "Scoreboard" },
+    { value: "concrete", label: "Concrete" },
   ];
 
   const equipmentOptions = [
@@ -116,11 +509,16 @@ const CourtManagement = () => {
 
       // Load venues owned by the user
       try {
-        const venuesResponse = await getOwnerVenuesService();
-        if (venuesResponse?.data?.success && venuesResponse?.data?.data) {
-          // Ensure we always set an array
-          const venuesData = Array.isArray(venuesResponse.data.data)
-            ? venuesResponse.data.data
+        // Include all venues regardless of status (pending, approved, rejected)
+        const venuesResponse = await getOwnerVenuesService({ 
+          limit: 100, // Get more venues to ensure we don't miss any
+          page: 1 
+        });
+        
+        if (venuesResponse?.data?.success && venuesResponse?.data?.data?.venues) {
+          // Backend returns venues under data.data.venues
+          const venuesData = Array.isArray(venuesResponse.data.data.venues)
+            ? venuesResponse.data.data.venues
             : [];
           setVenues(venuesData);
         } else {
@@ -134,8 +532,9 @@ const CourtManagement = () => {
       // Load courts owned by the user
       try {
         const courtsResponse = await getOwnerCourtsService();
+
+        
         if (courtsResponse?.data?.success && courtsResponse?.data?.data) {
-          // Ensure we always set an array
           const courtsData = Array.isArray(courtsResponse.data.data)
             ? courtsResponse.data.data
             : [];
@@ -268,6 +667,20 @@ const CourtManagement = () => {
         operatingHours: formData.operatingHours,
       };
 
+      // Add courtNumber for new courts (backend will auto-generate if not provided)
+      if (!editingCourt) {
+        // Get the highest court number for this venue and sport type
+        const existingCourts = courts.filter(
+          (court) => 
+            court.venue._id === formData.venue && 
+            court.sportType === formData.sportType
+        );
+        const maxCourtNumber = existingCourts.length > 0 
+          ? Math.max(...existingCourts.map(court => court.courtNumber || 0))
+          : 0;
+        courtData.courtNumber = maxCourtNumber + 1;
+      }
+
       if (editingCourt) {
         // Update existing court
         const response = await updateCourtService(editingCourt._id, courtData);
@@ -324,7 +737,13 @@ const CourtManagement = () => {
       capacity: court.capacity ? court.capacity.toString() : "",
       dimensions: court.dimensions || { length: "", width: "", unit: "meters" },
       features: Array.isArray(court.features) ? court.features : [],
-      equipment: Array.isArray(court.equipment) ? court.equipment : [],
+      equipment: Array.isArray(court.equipment) 
+        ? court.equipment.map(eq => 
+            typeof eq === 'string' 
+              ? { name: eq, available: true, rentPrice: 0 }
+              : eq
+          ) 
+        : [],
       operatingHours: court.operatingHours || {
         monday: { start: "06:00", end: "22:00", isAvailable: true },
         tuesday: { start: "06:00", end: "22:00", isAvailable: true },
@@ -399,374 +818,6 @@ const CourtManagement = () => {
       return venueObj ? venueObj.name : "Unknown Venue";
     }
     return "Unknown Venue";
-  };
-
-  const CourtModal = ({ isOpen, onClose, title }) => {
-    if (!isOpen) return null;
-
-    return (
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-70 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6 text-gray-600" />
-            </button>
-          </div>
-
-          <div className="p-6 space-y-6">
-            {/* Basic Information */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Basic Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Court Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="e.g., Badminton Court 1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Venue *
-                  </label>
-                  {!Array.isArray(venues) || venues.length === 0 ? (
-                    <div className="w-full px-4 py-3 border border-yellow-300 rounded-lg bg-yellow-50">
-                      <p className="text-sm text-yellow-700">
-                        No venues found. Please add a venue first in Facility
-                        Management.
-                      </p>
-                    </div>
-                  ) : (
-                    <select
-                      value={formData.venue}
-                      onChange={(e) =>
-                        handleInputChange("venue", e.target.value)
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                    >
-                      <option value="">Select Venue</option>
-                      {Array.isArray(venues) &&
-                        venues.map((venue) => (
-                          <option key={venue._id} value={venue._id}>
-                            {venue.name}
-                          </option>
-                        ))}
-                    </select>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sport Type *
-                  </label>
-                  <select
-                    value={formData.sportType}
-                    onChange={(e) =>
-                      handleInputChange("sportType", e.target.value)
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  >
-                    <option value="">Select Sport</option>
-                    {sportsOptions.map((sport) => (
-                      <option key={sport.value} value={sport.value}>
-                        {sport.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price per Hour (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.pricePerHour}
-                    onChange={(e) =>
-                      handleInputChange("pricePerHour", e.target.value)
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="300"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Capacity (persons) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.capacity}
-                    onChange={(e) =>
-                      handleInputChange("capacity", e.target.value)
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="4"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Dimensions */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Dimensions
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Length
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.dimensions.length}
-                    onChange={(e) =>
-                      handleNestedInputChange(
-                        "dimensions",
-                        "length",
-                        e.target.value ? parseFloat(e.target.value) : ""
-                      )
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="13.4"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Width
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.dimensions.width}
-                    onChange={(e) =>
-                      handleNestedInputChange(
-                        "dimensions",
-                        "width",
-                        e.target.value ? parseFloat(e.target.value) : ""
-                      )
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="6.1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Unit
-                  </label>
-                  <select
-                    value={formData.dimensions.unit}
-                    onChange={(e) =>
-                      handleNestedInputChange(
-                        "dimensions",
-                        "unit",
-                        e.target.value
-                      )
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  >
-                    <option value="meters">Meters</option>
-                    <option value="feet">Feet</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Features & Equipment */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Features & Equipment
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Features
-                  </label>
-                  <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                    {featuresOptions.map((feature) => (
-                      <label
-                        key={feature.value}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.features.includes(feature.value)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                features: [...prev.features, feature.value],
-                              }));
-                            } else {
-                              setFormData((prev) => ({
-                                ...prev,
-                                features: prev.features.filter(
-                                  (f) => f !== feature.value
-                                ),
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-black focus:ring-black"
-                        />
-                        <span className="text-sm text-gray-700">
-                          {feature.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Equipment
-                  </label>
-                  <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                    {equipmentOptions.map((equipment) => (
-                      <label
-                        key={equipment.value}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.equipment.includes(equipment.value)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                equipment: [...prev.equipment, equipment.value],
-                              }));
-                            } else {
-                              setFormData((prev) => ({
-                                ...prev,
-                                equipment: prev.equipment.filter(
-                                  (e) => e !== equipment.value
-                                ),
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-black focus:ring-black"
-                        />
-                        <span className="text-sm text-gray-700">
-                          {equipment.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Operating Hours */}
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Operating Hours
-              </h3>
-              <div className="space-y-3">
-                {days.map((day) => (
-                  <div
-                    key={day}
-                    className="flex items-center space-x-4 p-3 bg-white rounded-lg"
-                  >
-                    <div className="w-20">
-                      <span className="text-sm font-medium text-gray-700 capitalize">
-                        {day}
-                      </span>
-                    </div>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={
-                          formData.operatingHours[day]?.isAvailable ?? true
-                        }
-                        onChange={(e) =>
-                          handleOperatingHoursChange(
-                            day,
-                            "isAvailable",
-                            e.target.checked
-                          )
-                        }
-                        className="rounded border-gray-300 text-black focus:ring-black"
-                      />
-                      <span className="text-sm text-gray-600">Open</span>
-                    </label>
-                    {formData.operatingHours[day]?.isAvailable && (
-                      <>
-                        <div>
-                          <input
-                            type="time"
-                            value={
-                              formData.operatingHours[day]?.start || "06:00"
-                            }
-                            onChange={(e) =>
-                              handleOperatingHoursChange(
-                                day,
-                                "start",
-                                e.target.value
-                              )
-                            }
-                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black focus:border-black"
-                          />
-                        </div>
-                        <span className="text-gray-500">to</span>
-                        <div>
-                          <input
-                            type="time"
-                            value={formData.operatingHours[day]?.end || "22:00"}
-                            onChange={(e) =>
-                              handleOperatingHoursChange(
-                                day,
-                                "end",
-                                e.target.value
-                              )
-                            }
-                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black focus:border-black"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Modal Footer */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex justify-end space-x-4">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={loading || !isFormValid()}
-              className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span>
-                {loading
-                  ? "Saving..."
-                  : `${editingCourt ? "Update" : "Save"} Court`}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -1085,6 +1136,20 @@ const CourtManagement = () => {
           resetForm();
         }}
         title="Edit Court"
+        formData={formData}
+        setFormData={setFormData}
+        handleInputChange={handleInputChange}
+        handleNestedInputChange={handleNestedInputChange}
+        handleOperatingHoursChange={handleOperatingHoursChange}
+        venues={venues}
+        loading={loading}
+        sportsOptions={sportsOptions}
+        featuresOptions={featuresOptions}
+        equipmentOptions={equipmentOptions}
+        days={days}
+        handleSave={handleSave}
+        isFormValid={isFormValid}
+        editingCourt={editingCourt}
       />
 
       {/* Create Modal */}
@@ -1095,6 +1160,20 @@ const CourtManagement = () => {
           resetForm();
         }}
         title="Create New Court"
+        formData={formData}
+        setFormData={setFormData}
+        handleInputChange={handleInputChange}
+        handleNestedInputChange={handleNestedInputChange}
+        handleOperatingHoursChange={handleOperatingHoursChange}
+        venues={venues}
+        loading={loading}
+        sportsOptions={sportsOptions}
+        featuresOptions={featuresOptions}
+        equipmentOptions={equipmentOptions}
+        days={days}
+        handleSave={handleSave}
+        isFormValid={isFormValid}
+        editingCourt={editingCourt}
       />
     </div>
   );
