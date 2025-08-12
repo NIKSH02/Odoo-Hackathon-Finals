@@ -35,6 +35,7 @@ import OwnerProfile from "./pages/OwnerProfile";
 import TimeSlotManagement from "./pages/TimeSlotManagement";
 import CourtManagement from "./pages/CourtManagement";
 import LocationChat from './pages/LocationChat'
+import AboutPage from './pages/AboutPage';
 
 // Inner component that uses the auth context
 const AppContent = () => {
