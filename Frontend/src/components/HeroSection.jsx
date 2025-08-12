@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, use } from 'react';
 import { 
   MapPin, 
   Search, 
@@ -13,6 +13,7 @@ import {
   Navigation
 } from 'lucide-react';
 import { searchLocations, getCurrentLocation, reverseGeocode } from '../services/locationService.js';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = ({ onOpenSignUpModal, onOpenLoginModal, onLocationSearch }) => {
   const [location, setLocation] = useState('');
@@ -28,6 +29,8 @@ const HeroSection = ({ onOpenSignUpModal, onOpenLoginModal, onLocationSearch }) 
   const heroRef = useRef(null);
   const locationInputRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+
+  const nav = useNavigate();
 
   // Sports slideshow images
   const slides = [
@@ -490,8 +493,8 @@ const HeroSection = ({ onOpenSignUpModal, onOpenLoginModal, onLocationSearch }) 
             </div>
 
             {/* Feature Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg text-center hover:shadow-xl transition-all transform hover:-translate-y-1">
+            <div className="grid grid-cols-2 gap-4 cursor-pointer">
+              <div onClick={() => nav('/chat')} className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg text-center hover:shadow-xl transition-all transform hover:-translate-y-1">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Users className="w-5 h-5 text-blue-600" />
                   <span className="font-semibold text-gray-800">Community</span>

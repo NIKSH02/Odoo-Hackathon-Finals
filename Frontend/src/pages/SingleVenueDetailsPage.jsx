@@ -13,6 +13,10 @@ import {
   Shield,
   Droplets,
   Zap,
+  Thermometer,
+  Cloud,
+  Sun,
+  AlertTriangle,
 } from "lucide-react";
 import ImageCarousel from "../components/ImageCarousel";
 import SportsAvailable from "../components/SportsAvailable";
@@ -21,6 +25,124 @@ import Amenities from "../components/Amenities";
 import VenueMap from "../components/VenueMap";
 import { getVenueByIdService } from "../services/venueService";
 import { getSportsWithCourtCountsService } from "../services/courtService";
+import { getWeatherData } from '../utils/helper';
+
+
+// Weather Recommendations Component
+const WeatherRecommendations = ({ weatherData }) => {
+  if (!weatherData || !weatherData.recommendations) return null;
+
+  const { temp, feelsLike, description, humidity, recommendations } = weatherData;
+
+  return (
+    <div className="mb-8">
+      <div className="mb-6">
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+          Weather & Activity Recommendations
+        </h3>
+        <div className="w-8 h-1 bg-black rounded-full"></div>
+      </div>
+
+      <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
+        {/* Current Weather Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">{recommendations.icon}</span>
+              <div>
+                <h4 className="font-bold text-blue-900">Current Temperature</h4>
+                <p className="text-2xl font-bold text-blue-700">{Math.round(temp)}°C</p>
+              </div>
+            </div>
+            <p className="text-sm text-blue-600">Feels like {Math.round(feelsLike)}°C</p>
+          </div>
+
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+            <div className="flex items-center gap-3 mb-2">
+              <Cloud size={24} className="text-green-600" />
+              <div>
+                <h4 className="font-bold text-green-900">Conditions</h4>
+                <p className="text-lg font-bold text-green-700 capitalize">{description}</p>
+              </div>
+            </div>
+            <p className="text-sm text-green-600">Humidity: {humidity}%</p>
+          </div>
+
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+            <div className="flex items-center gap-3 mb-2">
+              <Sun size={24} className="text-purple-600" />
+              <div>
+                <h4 className="font-bold text-purple-900">Activity Level</h4>
+                <p className="text-sm font-bold text-purple-700">{recommendations.activityLevel}</p>
+              </div>
+            </div>
+            <p className="text-xs text-purple-600">{recommendations.bestTime}</p>
+          </div>
+        </div>
+
+        {/* Main Recommendation Message */}
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 mb-6 border border-yellow-200">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={24} className="text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-bold text-orange-900 mb-1">Weather Advisory</h4>
+              <p className="text-orange-800 font-medium">{recommendations.message}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Recommendations Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Activity Suggestions */}
+          <div className="space-y-4">
+            <h4 className="font-bold text-gray-900 text-lg mb-3">🏃‍♂️ Activity Suggestions</h4>
+            {recommendations.suggestions.map((suggestion, index) => (
+              <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <p className="text-sm text-gray-700 font-medium">{suggestion}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Health & Safety Tips */}
+          <div className="space-y-4">
+            <h4 className="font-bold text-gray-900 text-lg mb-3">🏥 Health & Safety Tips</h4>
+            
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-3">
+                <Droplets size={18} className="text-blue-600 mt-1" />
+                <div>
+                  <h5 className="font-bold text-blue-900 text-sm">Hydration</h5>
+                  <p className="text-sm text-blue-700">{recommendations.hydrationTip}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="flex items-start gap-3">
+                <Shield size={18} className="text-purple-600 mt-1" />
+                <div>
+                  <h5 className="font-bold text-purple-900 text-sm">Clothing</h5>
+                  <p className="text-sm text-purple-700">{recommendations.clothing}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="flex items-start gap-3">
+                <Clock size={18} className="text-orange-600 mt-1" />
+                <div>
+                  <h5 className="font-bold text-orange-900 text-sm">Best Time</h5>
+                  <p className="text-sm text-orange-700">{recommendations.bestTime}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // About Venue Component
 const AboutVenue = ({ venue }) => {
@@ -98,6 +220,8 @@ const SingleVenueDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showWeeklyCalendar, setShowWeeklyCalendar] = useState(false);
+  const [weatherData, setWeatherData] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   const fetchVenueData = async () => {
     try {
@@ -105,7 +229,13 @@ const SingleVenueDetailsPage = () => {
 
       // Fetch venue details
       const venueResponse = await getVenueByIdService(venueId);
-      setVenue(venueResponse.data.data.venue);
+      const venueData = venueResponse.data.data.venue;
+      setVenue(venueData);
+
+      // Fetch weather data for the venue's city
+      if (venueData?.address?.city) {
+        fetchWeatherData(venueData.address.city);
+      }
 
       // Fetch sports with court counts - try both new and old response structure
       try {
@@ -126,6 +256,20 @@ const SingleVenueDetailsPage = () => {
       setError(err.response?.data?.message || "Failed to fetch venue data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWeatherData = async (city) => {
+    try {
+      setWeatherLoading(true);
+      const weather = await getWeatherData(city);
+      setWeatherData(weather);
+      console.log("Weather data fetched:", weather);
+    } catch (err) {
+      console.error("Error fetching weather data:", err);
+      // Don't set error state for weather, just log it
+    } finally {
+      setWeatherLoading(false);
     }
   };
 
@@ -430,6 +574,7 @@ const SingleVenueDetailsPage = () => {
           {/* Image Carousel - 70% width */}
           <div className="w-full lg:w-[70%]">
             <ImageCarousel images={venue.photos} />
+            
           </div>
 
           {/* Sidebar - 30% width */}
@@ -440,6 +585,36 @@ const SingleVenueDetailsPage = () => {
             >
               📅 Book This Venue
             </button>
+
+            {/* Weather Quick Info */}
+            {/* {weatherData && (
+              <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-gray-100 rounded-xl">
+                    <Thermometer size={20} className="text-gray-700" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">Current Weather</h3>
+                    <div className="w-6 h-0.5 bg-black rounded-full mt-1"></div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">{Math.round(weatherData.temp)}°C</p>
+                    <p className="text-sm text-gray-600 capitalize">{weatherData.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-3xl">{weatherData.recommendations.icon}</span>
+                    <p className="text-xs text-gray-500 mt-1">Feels like {Math.round(weatherData.feelsLike)}°C</p>
+                  </div>
+                </div>
+                {weatherLoading && (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
+                  </div>
+                )}
+              </div>
+            )} */}
 
             <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
@@ -502,6 +677,7 @@ const SingleVenueDetailsPage = () => {
         {/* Full Width Content Below */}
         <div className="w-full space-y-8">
           <SportsAvailable sportsData={sportsData} />
+          <WeatherRecommendations weatherData={weatherData} />
           <Amenities amenities={venue.amenities} />
           <AboutVenue venue={venue} />
           <VenueReviews venueId={venueId} onReviewAdded={handleReviewAdded} />
