@@ -6,9 +6,11 @@ import {
   cancelBooking,
   updatePaymentStatus,
   getVenueBookings,
+  getOwnerBookings,
   getVenueBookingsByDate,
   getBookingAnalytics,
   markBookingCompleted,
+  updateBookingStatus,
 } from "../controllers/bookingController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import {
@@ -66,6 +68,17 @@ router.patch(
 // ================================
 // FACILITY OWNER ONLY ROUTES
 // ================================
+// Get all bookings across all venues for owner (facility owners only)
+router.get("/owner/all", protect, requireFacilityOwner, getOwnerBookings);
+
+// Update booking status (accept/reject bookings - facility owners only)
+router.patch(
+  "/:bookingId/status",
+  protect,
+  requireFacilityOwner,
+  updateBookingStatus
+);
+
 // Get all bookings for a venue (facility owners only)
 router.get(
   "/venue/:venueId",

@@ -63,6 +63,8 @@ const createCourt = asyncHandler(async (req, res) => {
     customName,
   } = req.body;
 
+  console.log("Creating court with data:", req.body); // Debug log
+
   // Check if user is facility owner
   if (req.user.role !== "facility_owner") {
     throw new ApiError(403, "Only facility owners can create courts");
@@ -92,6 +94,7 @@ const createCourt = asyncHandler(async (req, res) => {
   const courtNumber = lastCourt ? lastCourt.courtNumber + 1 : 1;
   const courtName =
     customName ||
+    name ||
     `${
       sportType.charAt(0).toUpperCase() + sportType.slice(1)
     } Court ${courtNumber}`;
@@ -103,10 +106,18 @@ const createCourt = asyncHandler(async (req, res) => {
     sportType,
     pricePerHour,
     capacity,
-    dimensions,
+    dimensions: dimensions || { length: 0, width: 0, unit: "meters" },
     features: features || [],
     equipment: equipment || [],
-    operatingHours,
+    operatingHours: operatingHours || {
+      monday: { start: "06:00", end: "22:00", isAvailable: true },
+      tuesday: { start: "06:00", end: "22:00", isAvailable: true },
+      wednesday: { start: "06:00", end: "22:00", isAvailable: true },
+      thursday: { start: "06:00", end: "22:00", isAvailable: true },
+      friday: { start: "06:00", end: "22:00", isAvailable: true },
+      saturday: { start: "06:00", end: "22:00", isAvailable: true },
+      sunday: { start: "06:00", end: "22:00", isAvailable: true },
+    },
   });
 
   await court.save();
@@ -117,6 +128,8 @@ const createCourt = asyncHandler(async (req, res) => {
   }
 
   await court.populate("venue", "name address");
+
+  console.log("Court created successfully:", court._id); // Debug log
 
   res
     .status(201)
@@ -387,6 +400,8 @@ const updateCourt = asyncHandler(async (req, res) => {
   const { courtId } = req.params;
   const updateData = req.body;
 
+  console.log("Updating court:", courtId, "with data:", updateData); // Debug log
+
   const court = await Court.findById(courtId).populate("venue");
 
   if (!court) {
@@ -421,6 +436,8 @@ const updateCourt = asyncHandler(async (req, res) => {
     await Venue.findByIdAndUpdate(court.venue._id, { startingPrice: minPrice });
   }
 
+  console.log("Court updated successfully:", updatedCourt._id); // Debug log
+
   res
     .status(200)
     .json(new ApiResponse(200, updatedCourt, "Court updated successfully"));
@@ -429,6 +446,8 @@ const updateCourt = asyncHandler(async (req, res) => {
 // Delete court (Owner only)
 const deleteCourt = asyncHandler(async (req, res) => {
   const { courtId } = req.params;
+
+  console.log("Deleting court:", courtId); // Debug log
 
   const court = await Court.findById(courtId).populate("venue");
 
@@ -453,6 +472,8 @@ const deleteCourt = asyncHandler(async (req, res) => {
 
   await Court.findByIdAndDelete(courtId);
 
+  console.log("Court deleted successfully:", courtId); // Debug log
+
   res
     .status(200)
     .json(new ApiResponse(200, null, "Court deleted successfully"));
@@ -460,55 +481,72 @@ const deleteCourt = asyncHandler(async (req, res) => {
 
 // Get courts by owner
 const getOwnerCourts = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, venueId, sportType, isActive } = req.query;
+  const { page = 1, limit = 50, venueId, sportType, isActive } = req.query;
+
+  // Validate user and role
+  if (!req.user || !req.user.id) {
+    throw new ApiError(401, "User not authenticated");
+  }
 
   if (req.user.role !== "facility_owner") {
     throw new ApiError(403, "Only facility owners can access this endpoint");
   }
 
+  console.log("Getting courts for owner:", req.user.id); // Debug log
+
   const skip = (page - 1) * limit;
 
-  // First get venues owned by the user
-  const ownedVenues = await Venue.find({ owner: req.user.id }).select("_id");
-  const venueIds = ownedVenues.map((v) => v._id);
+  try {
+    // First get venues owned by the user
+    const ownedVenues = await Venue.find({ owner: req.user.id }).select("_id");
+    const venueIds = ownedVenues.map((v) => v._id);
 
-  const filter = { venue: { $in: venueIds } };
+    console.log("Owned venues:", venueIds); // Debug log
 
-  if (venueId) {
-    filter.venue = venueId;
+    if (venueIds.length === 0) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, [], "No venues found for this owner"));
+    }
+
+    const filter = { venue: { $in: venueIds } };
+
+    if (venueId) {
+      filter.venue = venueId;
+    }
+
+    if (sportType) {
+      filter.sportType = sportType;
+    }
+
+    if (isActive !== undefined) {
+      filter.isActive = isActive === "true";
+    }
+
+    console.log("Court filter:", filter); // Debug log
+
+    const courts = await Court.find(filter)
+      .populate("venue", "name address")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .select("-__v");
+
+    console.log("Found courts:", courts.length); // Debug log
+
+    const total = await Court.countDocuments(filter);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        courts, // Return courts directly instead of nested object
+        "Owner courts fetched successfully"
+      )
+    );
+  } catch (error) {
+    console.error("Error in getOwnerCourts:", error);
+    throw new ApiError(500, "Failed to fetch owner courts");
   }
-
-  if (sportType) {
-    filter.sportType = sportType;
-  }
-
-  if (isActive !== undefined) {
-    filter.isActive = isActive === "true";
-  }
-
-  const courts = await Court.find(filter)
-    .populate("venue", "name address")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(Number(limit))
-    .select("-__v");
-
-  const total = await Court.countDocuments(filter);
-
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        courts,
-        pagination: {
-          currentPage: Number(page),
-          totalPages: Math.ceil(total / limit),
-          totalCourts: total,
-        },
-      },
-      "Owner courts fetched successfully"
-    )
-  );
 });
 
 // Toggle court active status
