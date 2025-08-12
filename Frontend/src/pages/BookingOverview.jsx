@@ -44,8 +44,25 @@ const BookingOverview = () => {
       const response = await getVenueBookingsService(venueId);
 
       if (response.data && response.data.success) {
-        setBookings(response.data.data || []);
-        setFilteredBookings(response.data.data || []);
+        // The API returns bookings in response.data.data.bookings
+        const bookingsData = response.data.data.bookings || [];
+
+        // Transform the data to match expected structure
+        const transformedBookings = bookingsData.map((booking) => ({
+          ...booking,
+          // Add user object if it's just an ID
+          user:
+            typeof booking.user === "string"
+              ? {
+                  _id: booking.user,
+                  fullName: "Customer", // Placeholder until we get user details
+                  email: "customer@example.com", // Placeholder
+                }
+              : booking.user,
+        }));
+
+        setBookings(transformedBookings);
+        setFilteredBookings(transformedBookings);
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
@@ -194,14 +211,19 @@ const BookingOverview = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (booking) =>
-          booking.user.fullName
+          (booking.user?.fullName || "")
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          booking.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          booking.court.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          booking.court.sportType
+          (booking.user?.email || "")
             .toLowerCase()
-            .includes(searchTerm.toLowerCase())
+            .includes(searchTerm.toLowerCase()) ||
+          (booking.court?.name || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (booking.court?.sportType || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (booking._id || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -365,154 +387,271 @@ const BookingOverview = () => {
   const BookingDetailModal = ({ booking, isOpen, onClose }) => {
     if (!isOpen || !booking) return null;
 
+    // Handle backdrop click
+    const handleBackdropClick = (e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    };
+
+    // Handle escape key
+    React.useEffect(() => {
+      const handleEscapeKey = (e) => {
+        if (e.key === "Escape") {
+          onClose();
+        }
+      };
+
+      if (isOpen) {
+        document.addEventListener("keydown", handleEscapeKey);
+        document.body.style.overflow = "hidden"; // Prevent background scrolling
+      }
+
+      return () => {
+        document.removeEventListener("keydown", handleEscapeKey);
+        document.body.style.overflow = "unset";
+      };
+    }, [isOpen, onClose]);
+
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Booking Details
-              </h2>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+        onClick={handleBackdropClick}
+      >
+        <div
+          className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Booking Details
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Booking ID: #{booking._id?.slice(-8)?.toUpperCase()}
+                </p>
+              </div>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200"
               >
                 <XCircle className="w-6 h-6" />
               </button>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Customer Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <User className="w-5 h-5 text-green-600 mr-2" />
                   Customer Information
                 </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700">
-                      {booking.user.fullName}
-                    </span>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Name
+                    </label>
+                    <p className="text-gray-900 font-medium">
+                      {booking.user?.fullName ||
+                        `Customer ${booking.user?._id?.slice(-6) || "Unknown"}`}
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-700">{booking.user.email}</span>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Email
+                    </label>
+                    <p className="text-gray-900">
+                      {booking.user?.email || "Email not available"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      User ID
+                    </label>
+                    <p className="text-gray-600 text-sm font-mono">
+                      {booking.user?._id || booking.user}
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Booking Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Calendar className="w-5 h-5 text-blue-600 mr-2" />
                   Booking Information
                 </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Date
+                    </label>
+                    <p className="text-gray-900 font-medium">
                       {formatDate(booking.bookingDate)}
-                    </span>
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Time
+                    </label>
+                    <p className="text-gray-900">
                       {formatTime(booking.timeSlot.startTime)} -{" "}
                       {formatTime(booking.timeSlot.endTime)}
-                    </span>
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700">
-                      {booking.court.name} ({booking.court.sportType})
-                    </span>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Duration
+                    </label>
+                    <p className="text-gray-900">{booking.duration} hour(s)</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Court
+                    </label>
+                    <p className="text-gray-900">
+                      {booking.court.name}
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        {booking.court.sportType}
+                      </span>
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Venue Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <MapPin className="w-5 h-5 text-purple-600 mr-2" />
                   Venue Information
                 </h3>
-                <div className="space-y-2">
-                  <div className="text-gray-700">{booking.venue.name}</div>
-                  <div className="text-gray-600 text-sm">
-                    {booking.venue.address.street}, {booking.venue.address.city}
-                    , {booking.venue.address.state}{" "}
-                    {booking.venue.address.zipCode}
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Venue Name
+                    </label>
+                    <p className="text-gray-900 font-medium">
+                      {booking.venue.name}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Address
+                    </label>
+                    <p className="text-gray-900 text-sm">
+                      {booking.venue?.address?.street && (
+                        <>
+                          {booking.venue.address.street}
+                          <br />
+                        </>
+                      )}
+                      {booking.venue?.address?.city &&
+                        booking.venue.address.city}
+                      {booking.venue?.address?.state &&
+                        `, ${booking.venue.address.state}`}
+                      {booking.venue?.address?.zipCode &&
+                        ` ${booking.venue.address.zipCode}`}
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Pricing Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="bg-green-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <DollarSign className="w-5 h-5 text-green-600 mr-2" />
                   Pricing Details
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Base Price:</span>
-                    <span className="text-gray-700">
+                    <span className="text-gray-900 font-medium">
                       ₹{booking.pricing.basePrice}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Equipment Rental:</span>
-                    <span className="text-gray-700">
+                    <span className="text-gray-900">
                       ₹{booking.pricing.equipmentRental}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Taxes:</span>
-                    <span className="text-gray-700">
+                    <span className="text-gray-900">
                       ₹{booking.pricing.taxes}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Discount:</span>
-                    <span className="text-gray-700">
+                    <span className="text-gray-900">
                       -₹{booking.pricing.discount}
                     </span>
                   </div>
-                  <div className="border-t pt-2">
-                    <div className="flex justify-between font-semibold">
-                      <span>Total Amount:</span>
-                      <span>₹{booking.pricing.totalAmount}</span>
+                  <div className="border-t border-green-200 pt-2 mt-3">
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-900">
+                        Total Amount:
+                      </span>
+                      <span className="font-bold text-green-600 text-lg">
+                        ₹{booking.pricing.totalAmount}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Status Information */}
-              <div className="space-y-4 md:col-span-2">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="lg:col-span-2 bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Status Information
                 </h3>
-                <div className="flex space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-600">Booking Status:</span>
-                    <span className={getStatusBadge(booking.status)}>
-                      {booking.status}
-                    </span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Booking Status
+                    </label>
+                    <div className="mt-1">
+                      <span
+                        className={`inline-flex items-center ${getStatusBadge(
+                          booking.status
+                        )}`}
+                      >
+                        {getStatusIcon(booking.status)}
+                        <span className="ml-2">{booking.status}</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-600">Payment Status:</span>
-                    <span className={getStatusBadge(booking.paymentStatus)}>
-                      {booking.paymentStatus}
-                    </span>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Payment Status
+                    </label>
+                    <div className="mt-1">
+                      <span className={getStatusBadge(booking.paymentStatus)}>
+                        {booking.paymentStatus}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <CreditCard className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700">
-                      {booking.paymentDetails.paymentMethod}
-                    </span>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Payment Method
+                    </label>
+                    <div className="mt-1 flex items-center">
+                      <CreditCard className="w-4 h-4 text-gray-500 mr-2" />
+                      <span className="text-gray-900">
+                        {booking.paymentDetails.paymentMethod}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-between items-center">
-              {/* Action buttons based on booking status */}
-              <div className="flex space-x-3">
+            {/* Action Buttons */}
+            <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-200 pt-6">
+              <div className="flex flex-wrap gap-3">
                 {booking.status === "pending" && (
                   <>
                     <button
@@ -520,9 +659,9 @@ const BookingOverview = () => {
                         handleAcceptBooking(booking._id);
                         onClose();
                       }}
-                      className="flex items-center space-x-2 px-4 py-2 text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
+                      className="flex items-center space-x-2 px-6 py-3 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                     >
-                      <CheckCircle className="w-4 h-4" />
+                      <CheckCircle className="w-5 h-5" />
                       <span>Accept Booking</span>
                     </button>
                     <button
@@ -530,9 +669,9 @@ const BookingOverview = () => {
                         handleRejectBooking(booking._id);
                         onClose();
                       }}
-                      className="flex items-center space-x-2 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+                      className="flex items-center space-x-2 px-6 py-3 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                     >
-                      <XCircle className="w-4 h-4" />
+                      <XCircle className="w-5 h-5" />
                       <span>Reject Booking</span>
                     </button>
                   </>
@@ -544,18 +683,17 @@ const BookingOverview = () => {
                       handleCompleteBooking(booking._id);
                       onClose();
                     }}
-                    className="flex items-center space-x-2 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    className="flex items-center space-x-2 px-6 py-3 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                   >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Mark as Completed</span>
+                    <CheckCircle className="w-5 h-5" />
+                    <span>Completed</span>
                   </button>
                 )}
               </div>
 
-              {/* Close button */}
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
               >
                 Close
               </button>
@@ -680,10 +818,13 @@ const BookingOverview = () => {
                             <User className="w-4 h-4 text-gray-500" />
                             <div>
                               <p className="font-medium text-gray-900">
-                                {booking.user.fullName}
+                                {booking.user?.fullName ||
+                                  `Customer ${
+                                    booking.user?._id?.slice(-6) || "Unknown"
+                                  }`}
                               </p>
                               <p className="text-sm text-gray-500">
-                                {booking.user.email}
+                                {booking.user?.email || "Email not available"}
                               </p>
                             </div>
                           </div>

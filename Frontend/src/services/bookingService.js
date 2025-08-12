@@ -40,6 +40,12 @@ export const getVenueBookingsService = async (venueId, params = {}) => {
   );
 };
 
+// Get all bookings for facility owner (across all venues)
+export const getOwnerBookingsService = async (params = {}) => {
+  const queryParams = new URLSearchParams(params).toString();
+  return api.get(`/bookings/owner/all${queryParams ? `?${queryParams}` : ""}`);
+};
+
 // Get venue bookings by specific date
 export const getVenueBookingsByDateService = async (venueId, date) => {
   const formattedDate =

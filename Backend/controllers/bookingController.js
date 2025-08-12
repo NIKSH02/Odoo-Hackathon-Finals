@@ -404,6 +404,81 @@ const getVenueBookings = asyncHandler(async (req, res) => {
   );
 });
 
+// Get all bookings for facility owner (across all venues)
+const getOwnerBookings = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 50, status, date, sport } = req.query;
+
+  if (req.user.role !== "facility_owner") {
+    throw new ApiError(403, "Only facility owners can access this endpoint");
+  }
+
+  // Get all venues owned by the user
+  const ownedVenues = await Venue.find({ owner: req.user.id }).select("_id");
+  const venueIds = ownedVenues.map((v) => v._id);
+
+  if (venueIds.length === 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "No venues found for this owner"));
+  }
+
+  const skip = (page - 1) * limit;
+  const filter = { venue: { $in: venueIds } };
+
+  if (status) {
+    filter.status = status;
+  }
+
+  if (date) {
+    const targetDate = new Date(date);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    filter.bookingDate = {
+      $gte: targetDate,
+      $lt: nextDay,
+    };
+  }
+
+  if (sport) {
+    // Get courts of specific sport type
+    const courts = await Court.find({
+      venue: { $in: venueIds },
+      sportType: sport,
+    }).select("_id");
+    const courtIds = courts.map((c) => c._id);
+    filter.court = { $in: courtIds };
+  }
+
+  const bookings = await Booking.find(filter)
+    .populate({
+      path: "user",
+      select: "name email phone",
+    })
+    .populate({
+      path: "court",
+      select: "name sportType pricePerHour",
+      populate: {
+        path: "venue",
+        select: "name address",
+      },
+    })
+    .populate({
+      path: "venue",
+      select: "name address",
+    })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit));
+
+  const total = await Booking.countDocuments(filter);
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, bookings, "Owner bookings fetched successfully")
+    );
+});
+
 // Get booking analytics for facility owner
 const getBookingAnalytics = asyncHandler(async (req, res) => {
   const { venueId } = req.params;
@@ -564,6 +639,89 @@ const markBookingCompleted = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, booking, "Booking marked as completed"));
 });
 
+// Update booking status (for facility owners to accept/reject bookings)
+const updateBookingStatus = asyncHandler(async (req, res) => {
+  const { bookingId } = req.params;
+  const { status, reason } = req.body;
+
+  // Validate status
+  const validStatuses = ["confirmed", "cancelled"];
+  if (!validStatuses.includes(status)) {
+    throw new ApiError(
+      400,
+      "Invalid status. Must be 'confirmed' or 'cancelled'"
+    );
+  }
+
+  const booking = await Booking.findById(bookingId).populate("venue");
+
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
+  }
+
+  // Check if user is the venue owner
+  if (booking.venue.owner.toString() !== req.user.id) {
+    throw new ApiError(403, "Only venue owner can update booking status");
+  }
+
+  // Only pending bookings can be updated
+  if (booking.status !== "pending") {
+    throw new ApiError(400, "Only pending bookings can be updated");
+  }
+
+  const oldStatus = booking.status;
+  booking.status = status;
+
+  // Add status change history
+  if (!booking.statusHistory) {
+    booking.statusHistory = [];
+  }
+
+  booking.statusHistory.push({
+    status: oldStatus,
+    changedAt: new Date(),
+    changedBy: req.user.id,
+    reason:
+      reason ||
+      `Status changed from ${oldStatus} to ${status} by facility owner`,
+  });
+
+  // If booking is confirmed, update payment status if needed
+  if (status === "confirmed") {
+    // If payment was already completed, keep it as is
+    // If payment is pending, it remains pending until user pays
+    booking.confirmedAt = new Date();
+    booking.confirmedBy = req.user.id;
+  }
+
+  // If booking is cancelled by owner
+  if (status === "cancelled") {
+    booking.cancellation = {
+      cancelledAt: new Date(),
+      cancelledBy: req.user.id,
+      reason: reason || "Booking rejected by facility owner",
+      refundAmount: booking.pricing.totalAmount, // Full refund for owner cancellation
+      refundStatus: "pending",
+    };
+  }
+
+  await booking.save();
+
+  // Populate the response
+  await booking.populate([
+    { path: "venue", select: "name address" },
+    { path: "court", select: "name sportType" },
+    { path: "user", select: "fullName email" },
+  ]);
+
+  const message =
+    status === "confirmed"
+      ? "Booking accepted successfully"
+      : "Booking rejected successfully";
+
+  res.status(200).json(new ApiResponse(200, booking, message));
+});
+
 // Get venue bookings by specific date (public endpoint for availability checking)
 const getVenueBookingsByDate = asyncHandler(async (req, res) => {
   const { venueId, date } = req.params;
@@ -612,7 +770,9 @@ export {
   cancelBooking,
   updatePaymentStatus,
   getVenueBookings,
+  getOwnerBookings,
   getVenueBookingsByDate,
   getBookingAnalytics,
   markBookingCompleted,
+  updateBookingStatus,
 };

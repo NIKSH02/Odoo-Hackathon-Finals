@@ -27,6 +27,11 @@ const router = express.Router();
 router.get("/venue/:venueId", getCourtsByVenue);
 router.get("/venue/:venueId/sports", getSportsWithCourtCounts);
 router.get("/venue/:venueId/availability", getCourtAvailabilityBySport);
+
+// Owner-specific routes (must come before /:courtId to avoid conflicts)
+router.get("/owner/my-courts", protect, getOwnerCourts);
+
+// Court-specific routes
 router.get("/:courtId", getCourtById);
 router.get("/:courtId/availability", checkCourtAvailability);
 
@@ -36,7 +41,6 @@ router.post("/", protect, requireFacilityOwner, createCourt);
 router.post("/bulk", protect, requireFacilityOwner, createBulkCourts);
 router.put("/:courtId", protect, updateCourt);
 router.delete("/:courtId", protect, deleteCourt);
-router.get("/owner/my-courts", protect, getOwnerCourts);
 router.patch("/:courtId/toggle-status", protect, toggleCourtStatus);
 
 // Player routes
