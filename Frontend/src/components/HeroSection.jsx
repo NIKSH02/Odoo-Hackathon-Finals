@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { searchLocations, getCurrentLocation, reverseGeocode } from '../services/locationService.js';
 
-const HeroSection = ({ onOpenSignUpModal, onOpenLoginModal, onLocationSearch }) => {
+const HeroSection = ({ onLocationSearch }) => {
   const [location, setLocation] = useState('');
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);

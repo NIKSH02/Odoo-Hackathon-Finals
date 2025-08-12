@@ -1250,7 +1250,7 @@ const FacilityManagement = () => {
     "sunday",
   ];
 
-  // Load owner's venues from backend
+  // Load static sample venues
   useEffect(() => {
     const loadOwnerVenues = async () => {
       try {
@@ -1506,8 +1506,9 @@ const FacilityManagement = () => {
           alert("Venue updated successfully!");
         }
       } else {
-        // Create new venue request
-        const venueData = {
+        // Create new venue locally
+        const newVenue = {
+          _id: `venue-${Date.now()}`, // Generate temporary ID
           name: formData.name.trim(),
           description: formData.description.trim(),
           address: {

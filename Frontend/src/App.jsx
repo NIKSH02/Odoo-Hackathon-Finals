@@ -12,6 +12,7 @@ import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleSelectionModal from "./components/RoleSelectionModal";
 import ScrollToTop from "./components/ScrollToTop";
+import Navbar from "./components/Navbar";
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -44,9 +45,11 @@ const AppContent = () => {
       <ScrollToTop />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 ease-in-out font-inter">
         <GoogleTranslate />
+        <Navbar />
         <main>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route
               path="/venues"
               element={

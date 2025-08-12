@@ -120,19 +120,21 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex">
       {/* Desktop Layout - 40/60 Split */}
       <div className="hidden lg:flex lg:w-2/5 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-indigo-700 opacity-90"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-black opacity-95"></div>
         <img
           src="/authpage.jpg"
-          alt="QuickCourt Authentication"
+          alt="SportVenue Authentication"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="relative z-10 flex flex-col justify-center px-12 text-white">
-          <h1 className="text-4xl font-bold mb-4">Join QuickCourt Today</h1>
-          <p className="text-xl opacity-90">
-            Create your account to book sports facilities and connect with the gaming community.
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+            Join SportVenue Today
+          </h1>
+          <p className="text-xl text-gray-200">
+            Create your account to book sports facilities and connect with the sports community.
           </p>
         </div>
       </div>
@@ -143,29 +145,29 @@ const RegisterPage = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-6">
             <Link to="/" className="inline-block">
-              <h1 className="text-2xl lg:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                QuickCourt
+              <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent">
+                SportVenue
               </h1>
             </Link>
           </div>
           
           {/* Desktop Logo */}
           <Link to="/" className="hidden lg:flex justify-center mb-6">
-            <h1 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-              QuickCourt
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent">
+              SportVenue
             </h1>
           </Link>
           
           {/* Title and subtitle */}
           <div className="text-center mb-6">
-            <h2 className="text-xl lg:text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">
+            <h2 className="text-xl lg:text-2xl font-extrabold bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent mb-2">
               Create Your Account
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Or{' '}
               <Link
                 to="/login"
-                className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                className="font-medium text-black hover:text-gray-700 transition-colors duration-200"
               >
                 sign in to your existing account
               </Link>
@@ -173,10 +175,10 @@ const RegisterPage = () => {
           </div>
 
           {/* Form Card */}
-          <div className="bg-white dark:bg-gray-800 py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-10 shadow sm:rounded-lg">
+          <div className="bg-white py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-10 shadow-xl border border-gray-200 sm:rounded-xl">
             <form className="space-y-4 sm:space-y-6" onSubmit={(e) => e.preventDefault()}>
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
                 Full Name
               </label>
               <div className="mt-1">
@@ -187,14 +189,14 @@ const RegisterPage = () => {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                   placeholder="Enter your full name"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
               </label>
               <div className="mt-1">
@@ -205,14 +207,14 @@ const RegisterPage = () => {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                   placeholder="Choose a username"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
                 I am a
               </label>
               <div className="mt-1">
@@ -221,7 +223,7 @@ const RegisterPage = () => {
                   name="role"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                 >
                   <option value="player">Player</option>
                   <option value="facility_owner">Facility Owner</option>
@@ -230,7 +232,7 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-gray-700">
                 Profile Picture (Optional)
               </label>
               <div className="mt-1">
@@ -243,7 +245,7 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
               </label>
               <div className="mt-1">
@@ -254,14 +256,14 @@ const RegisterPage = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                   placeholder="Enter your email"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="mt-1">
@@ -277,7 +279,7 @@ const RegisterPage = () => {
                   }}
                   onFocus={() => setShowPasswordValidation(password.length > 0)}
                   onBlur={() => setShowPasswordValidation(false)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                   placeholder="Enter your password"
                 />
               </div>
@@ -288,7 +290,7 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Confirm Password
               </label>
               <div className="mt-1">
@@ -299,7 +301,7 @@ const RegisterPage = () => {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm bg-white text-gray-900 transition-colors duration-200"
                   placeholder="Confirm your password"
                 />
               </div>
@@ -309,7 +311,7 @@ const RegisterPage = () => {
               <button
                 type="button"
                 onClick={handleSignUp}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-white bg-gradient-to-r from-black via-gray-800 to-black hover:from-gray-900 hover:via-gray-700 hover:to-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200"
               >
                 Create Account
               </button>
@@ -320,10 +322,10 @@ const RegisterPage = () => {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
           </div>

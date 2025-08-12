@@ -104,7 +104,7 @@ const CourtManagement = () => {
     "sunday",
   ];
 
-  // Load data
+  // Load static data
   useEffect(() => {
     loadData();
   }, []);
