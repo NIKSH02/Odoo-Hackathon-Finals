@@ -32,6 +32,8 @@ const OwnerProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   // Backend-compatible profile data structure (only fields that exist in User model)
   const [profileData, setProfileData] = useState({
@@ -74,11 +76,23 @@ const OwnerProfile = () => {
 
         const response = await getCurrentUserService();
 
-        if (response.success && response.data) {
-          const userData = response.data;
+        let userData;
+        if (response.data && response.data.success && response.data.data) {
+          userData = response.data.data;
+        } else if (response.data && response.data.data) {
+          // Fallback for different response structure
+          userData = response.data.data;
+        } else if (response.data) {
+          // Another fallback
+          userData = response.data;
+        } else {
+          console.error("Unexpected response structure:", response);
+          setError("Failed to load profile data - unexpected response format");
+          return;
+        }
 
-          // Only show data for facility owners
-          if (userData.role === "facility_owner") {
+        // Only show data for facility owners
+        if (userData.role === "facility_owner") {
             setProfileData({
               _id: userData._id || "",
               fullName: userData.fullName || "",
@@ -89,7 +103,7 @@ const OwnerProfile = () => {
               authProvider: userData.authProvider || "",
               profilePicture: userData.profilePicture || "",
               address: {
-                country: userData.address?.country || "India",
+                country: "India", // Default since User model doesn't have address field
               },
               googleId: userData.googleId || "",
             });
@@ -113,7 +127,6 @@ const OwnerProfile = () => {
           } else {
             setError("Access denied. This page is only for facility owners.");
           }
-        }
       } catch (error) {
         console.error("Error loading user data:", error);
         setError(error.message || "Failed to load profile data");
@@ -150,14 +163,10 @@ const OwnerProfile = () => {
       // Store the actual file for upload
       setProfileImage(file);
 
-      // Create preview URL
+      // Create preview URL for display during edit mode
       const reader = new FileReader();
       reader.onload = (e) => {
-        // Update editable profile data with preview URL for display
-        setEditableProfileData((prev) => ({
-          ...prev,
-          profilePicture: e.target.result,
-        }));
+        setImagePreview(e.target.result);
       };
       reader.readAsDataURL(file);
     }
@@ -190,36 +199,39 @@ const OwnerProfile = () => {
 
       const response = await updateProfileService(updateData);
 
-      if (response.success) {
+      if (response.data && response.data.success) {
+        const updatedUserData = response.data.data || response.data;
+        
         // Update the auth context with new user data
-        updateUser(response.data);
+        updateUser(updatedUserData);
 
         // Update local state with response data
         setProfileData((prev) => ({
           ...prev,
-          _id: response.data._id || "",
-          fullName: response.data.fullName || "",
-          username: response.data.username || "",
-          email: response.data.email || "",
-          isEmailVerified: response.data.isEmailVerified || false,
-          role: response.data.role || "",
-          authProvider: response.data.authProvider || "",
-          profilePicture: response.data.profilePicture || "",
+          _id: updatedUserData._id || "",
+          fullName: updatedUserData.fullName || "",
+          username: updatedUserData.username || "",
+          email: updatedUserData.email || "",
+          isEmailVerified: updatedUserData.isEmailVerified || false,
+          role: updatedUserData.role || "",
+          authProvider: updatedUserData.authProvider || "",
+          profilePicture: updatedUserData.profilePicture || "",
           address: {
-            country: response.data.address?.country || "India",
+            country: updatedUserData.address?.country || "India",
           },
-          googleId: response.data.googleId || "",
+          googleId: updatedUserData.googleId || "",
         }));
 
         // Update editable data
         setEditableProfileData({
-          fullName: response.data.fullName || "",
-          username: response.data.username || "",
-          role: response.data.role || "",
+          fullName: updatedUserData.fullName || "",
+          username: updatedUserData.username || "",
+          role: updatedUserData.role || "",
         });
 
         setIsEditMode(false);
         setProfileImage(null);
+        setImagePreview(null);
         alert("Profile updated successfully!");
       } else {
         throw new Error(response.message || "Failed to update profile");
@@ -242,6 +254,7 @@ const OwnerProfile = () => {
     });
     setIsEditMode(false);
     setProfileImage(null);
+    setImagePreview(null);
   };
 
   const formatMemberSince = (dateString) => {
@@ -338,21 +351,34 @@ const OwnerProfile = () => {
                       <div className="text-center">
                         <div className="relative w-32 h-32 mx-auto mb-4">
                           <div className="w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
-                            {(isEditMode &&
-                              editableProfileData.profilePicture) ||
-                            profileData.profilePicture ? (
-                              <img
-                                src={
-                                  (isEditMode &&
-                                    editableProfileData.profilePicture) ||
-                                  profileData.profilePicture
-                                }
-                                alt="Profile"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <User className="w-16 h-16 text-gray-400" />
-                            )}
+                            {(() => {
+                              // Priority: image preview (edit mode) > profile picture from data
+                              let imageSource = null;
+                              let showImage = false;
+                              
+                              if (isEditMode && imagePreview) {
+                                imageSource = imagePreview;
+                                showImage = true;
+                              } else if (profileData.profilePicture) {
+                                imageSource = profileData.profilePicture;
+                                showImage = true;
+                              }
+                              
+                              return showImage ? (
+                                <img
+                                  src={imageSource}
+                                  alt="Profile"
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.error("Image load error:", e.target.src);
+                                    setImageError(true);
+                                  }}
+                                  onLoad={() => setImageError(false)}
+                                />
+                              ) : (
+                                <User className="w-16 h-16 text-gray-400" />
+                              );
+                            })()}
                           </div>
                           {isEditMode && (
                             <button

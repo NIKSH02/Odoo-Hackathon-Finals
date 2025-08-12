@@ -57,7 +57,11 @@ const AppContent = () => {
             />
             <Route
               path="/chat"
-              element={<LocationChat />}
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <LocationChat />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/venue/:id"
