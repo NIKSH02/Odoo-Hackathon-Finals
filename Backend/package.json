@@ -27,13 +27,15 @@
     "express": "^5.1.0",
     "express-async-handler": "^1.2.0",
     "google-auth-library": "^10.2.1",
+    "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
     "mongoose-paginate-v2": "^1.9.1",
     "multer": "^2.0.1",
+    "nodemailer": "^7.0.3",
+    "socket.io": "^4.8.1",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^7.0.3",
     "razorpay": "^2.9.6"
   }
 }
