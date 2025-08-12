@@ -6,7 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import ThemeProvider from "./context/ThemeContext";
+
 import ToastProvider from "./context/ToastContext";
 import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -220,13 +220,13 @@ const AppContent = () => {
 const App = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <ThemeProvider>
+      
         <ToastProvider>
           <AuthProvider>
             <AppContent />
           </AuthProvider>
         </ToastProvider>
-      </ThemeProvider>
+      
     </GoogleOAuthProvider>
   );
 };
