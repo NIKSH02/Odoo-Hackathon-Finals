@@ -442,6 +442,28 @@ const OwnerProfile = () => {
                             ₹{businessStats.totalEarnings.toLocaleString()}
                           </span>
                         </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Star className="w-5 h-5 text-gray-600" />
+                            <span className="text-gray-700">
+                              Average Rating
+                            </span>
+                          </div>
+                          <span className="font-semibold text-gray-900">
+                            {businessStats.rating > 0
+                              ? `${businessStats.rating}/5.0`
+                              : "No ratings yet"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-5 h-5 text-gray-600" />
+                            <span className="text-gray-700">Member Since</span>
+                          </div>
+                          <span className="font-semibold text-gray-900">
+                            {formatMemberSince(businessStats.memberSince)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

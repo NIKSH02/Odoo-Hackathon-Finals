@@ -907,21 +907,21 @@ const getAllCourts = asyncHandler(async (req, res) => {
     status,
     venue,
     search,
-    sortBy = 'createdAt',
-    sortOrder = 'desc'
+    sortBy = "createdAt",
+    sortOrder = "desc",
   } = req.query;
 
   // Build filter object
   const filter = {};
-  
-  if (sport && sport !== 'all') {
+
+  if (sport && sport !== "all") {
     filter.sportType = sport;
   }
-  
-  if (status && status !== 'all') {
-    filter.isActive = status === 'active';
+
+  if (status && status !== "all") {
+    filter.isActive = status === "active";
   }
-  
+
   if (venue) {
     filter.venue = venue;
   }
@@ -931,9 +931,9 @@ const getAllCourts = asyncHandler(async (req, res) => {
   if (search) {
     searchFilter = {
       $or: [
-        { name: { $regex: search, $options: 'i' } },
-        { sportType: { $regex: search, $options: 'i' } }
-      ]
+        { name: { $regex: search, $options: "i" } },
+        { sportType: { $regex: search, $options: "i" } },
+      ],
     };
   }
 
@@ -942,20 +942,20 @@ const getAllCourts = asyncHandler(async (req, res) => {
 
   // Build sort object
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  sort[sortBy] = sortOrder === "desc" ? -1 : 1;
 
   // Execute query with pagination
   const skip = (parseInt(page) - 1) * parseInt(limit);
-  
+
   const [courts, totalCount] = await Promise.all([
     Court.find(finalFilter)
-      .populate('venue', 'name address city state owner')
-      .populate('venue.owner', 'fullName email')
+      .populate("venue", "name address city state owner")
+      .populate("venue.owner", "fullName email")
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit))
-      .select('-__v'),
-    Court.countDocuments(finalFilter)
+      .select("-__v"),
+    Court.countDocuments(finalFilter),
   ]);
 
   // Calculate additional metrics for each court
@@ -967,27 +967,27 @@ const getAllCourts = asyncHandler(async (req, res) => {
           $group: {
             _id: null,
             totalBookings: { $sum: 1 },
-            totalRevenue: { $sum: '$pricing.totalAmount' },
+            totalRevenue: { $sum: "$pricing.totalAmount" },
             confirmedBookings: {
-              $sum: { $cond: [{ $eq: ['$status', 'confirmed'] }, 1, 0] }
+              $sum: { $cond: [{ $eq: ["$status", "confirmed"] }, 1, 0] },
             },
             cancelledBookings: {
-              $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] }
-            }
-          }
-        }
+              $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
+            },
+          },
+        },
       ]);
 
       const stats = bookingStats[0] || {
         totalBookings: 0,
         totalRevenue: 0,
         confirmedBookings: 0,
-        cancelledBookings: 0
+        cancelledBookings: 0,
       };
 
       return {
         ...court.toObject(),
-        stats
+        stats,
       };
     })
   );
@@ -1005,10 +1005,10 @@ const getAllCourts = asyncHandler(async (req, res) => {
           totalCount,
           limit: parseInt(limit),
           hasNextPage: parseInt(page) < totalPages,
-          hasPrevPage: parseInt(page) > 1
-        }
+          hasPrevPage: parseInt(page) > 1,
+        },
       },
-      'Courts fetched successfully'
+      "Courts fetched successfully"
     )
   );
 });
@@ -1018,14 +1018,14 @@ const updateCourtStatus = asyncHandler(async (req, res) => {
   const { courtId } = req.params;
   const { isActive, reason } = req.body;
 
-  const court = await Court.findById(courtId).populate('venue', 'name');
+  const court = await Court.findById(courtId).populate("venue", "name");
 
   if (!court) {
-    throw new ApiError(404, 'Court not found');
+    throw new ApiError(404, "Court not found");
   }
 
   court.isActive = isActive;
-  
+
   // Add status change log if needed
   if (reason) {
     court.statusChangeLog = court.statusChangeLog || [];
@@ -1034,38 +1034,76 @@ const updateCourtStatus = asyncHandler(async (req, res) => {
       previousStatus: court.isActive,
       newStatus: isActive,
       reason: reason,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   await court.save();
 
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      court,
-      `Court ${isActive ? 'activated' : 'deactivated'} successfully`
-    )
-  );
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        court,
+        `Court ${isActive ? "activated" : "deactivated"} successfully`
+      )
+    );
+});
+
+// Update court details
+const updateCourt = asyncHandler(async (req, res) => {
+  const { courtId } = req.params;
+  const updateData = req.body;
+
+  const court = await Court.findById(courtId).populate("venue", "name");
+
+  if (!court) {
+    throw new ApiError(404, "Court not found");
+  }
+
+  // Update only allowed fields
+  const allowedFields = [
+    "name",
+    "courtNumber",
+    "sportType",
+    "capacity",
+    "pricePerHour",
+    "features",
+    "description",
+    "isActive",
+  ];
+
+  allowedFields.forEach((field) => {
+    if (updateData[field] !== undefined) {
+      court[field] = updateData[field];
+    }
+  });
+
+  await court.save();
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, court, "Court updated successfully"));
 });
 
 // Get court analytics for admin dashboard
 const getCourtAnalytics = asyncHandler(async (req, res) => {
-  const { period = '30days' } = req.query;
+  const { period = "30days" } = req.query;
 
   // Calculate date range
   let startDate = new Date();
   switch (period) {
-    case '7days':
+    case "7days":
       startDate.setDate(startDate.getDate() - 7);
       break;
-    case '30days':
+    case "30days":
       startDate.setDate(startDate.getDate() - 30);
       break;
-    case '90days':
+    case "90days":
       startDate.setDate(startDate.getDate() - 90);
       break;
-    case '1year':
+    case "1year":
       startDate.setFullYear(startDate.getFullYear() - 1);
       break;
     default:
@@ -1077,16 +1115,16 @@ const getCourtAnalytics = asyncHandler(async (req, res) => {
     Court.aggregate([
       {
         $group: {
-          _id: '$sportType',
+          _id: "$sportType",
           totalCourts: { $sum: 1 },
           activeCourts: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] },
           },
-          averagePrice: { $avg: '$pricePerHour' },
-          totalCapacity: { $sum: '$capacity' }
-        }
+          averagePrice: { $avg: "$pricePerHour" },
+          totalCapacity: { $sum: "$capacity" },
+        },
       },
-      { $sort: { totalCourts: -1 } }
+      { $sort: { totalCourts: -1 } },
     ]),
 
     // Top performing courts by revenue
@@ -1094,37 +1132,37 @@ const getCourtAnalytics = asyncHandler(async (req, res) => {
       { $match: { createdAt: { $gte: startDate } } },
       {
         $lookup: {
-          from: 'courts',
-          localField: 'court',
-          foreignField: '_id',
-          as: 'courtInfo'
-        }
+          from: "courts",
+          localField: "court",
+          foreignField: "_id",
+          as: "courtInfo",
+        },
       },
-      { $unwind: '$courtInfo' },
+      { $unwind: "$courtInfo" },
       {
         $lookup: {
-          from: 'venues',
-          localField: 'venue',
-          foreignField: '_id',
-          as: 'venueInfo'
-        }
+          from: "venues",
+          localField: "venue",
+          foreignField: "_id",
+          as: "venueInfo",
+        },
       },
-      { $unwind: '$venueInfo' },
+      { $unwind: "$venueInfo" },
       {
         $group: {
-          _id: '$court',
-          courtName: { $first: '$courtInfo.name' },
-          sportType: { $first: '$courtInfo.sportType' },
-          venueName: { $first: '$venueInfo.name' },
-          totalRevenue: { $sum: '$pricing.totalAmount' },
+          _id: "$court",
+          courtName: { $first: "$courtInfo.name" },
+          sportType: { $first: "$courtInfo.sportType" },
+          venueName: { $first: "$venueInfo.name" },
+          totalRevenue: { $sum: "$pricing.totalAmount" },
           totalBookings: { $sum: 1 },
           confirmedBookings: {
-            $sum: { $cond: [{ $eq: ['$status', 'confirmed'] }, 1, 0] }
-          }
-        }
+            $sum: { $cond: [{ $eq: ["$status", "confirmed"] }, 1, 0] },
+          },
+        },
       },
       { $sort: { totalRevenue: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]),
 
     // Court utilization trends
@@ -1133,19 +1171,19 @@ const getCourtAnalytics = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: {
-            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           },
           bookings: { $sum: 1 },
-          revenue: { $sum: '$pricing.totalAmount' },
-          uniqueCourts: { $addToSet: '$court' }
-        }
+          revenue: { $sum: "$pricing.totalAmount" },
+          uniqueCourts: { $addToSet: "$court" },
+        },
       },
       {
         $addFields: {
-          uniqueCourtCount: { $size: '$uniqueCourts' }
-        }
+          uniqueCourtCount: { $size: "$uniqueCourts" },
+        },
       },
-      { $sort: { '_id.date': 1 } }
+      { $sort: { "_id.date": 1 } },
     ]),
 
     // Total court statistics
@@ -1155,23 +1193,23 @@ const getCourtAnalytics = asyncHandler(async (req, res) => {
           _id: null,
           totalCourts: { $sum: 1 },
           activeCourts: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] },
           },
           inactiveCourts: {
-            $sum: { $cond: [{ $eq: ['$isActive', false] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$isActive", false] }, 1, 0] },
           },
-          averagePrice: { $avg: '$pricePerHour' },
-          totalCapacity: { $sum: '$capacity' }
-        }
-      }
-    ])
+          averagePrice: { $avg: "$pricePerHour" },
+          totalCapacity: { $sum: "$capacity" },
+        },
+      },
+    ]),
   ]);
 
   const [
     sportStatistics,
     topPerformingCourts,
     utilizationTrends,
-    overallStats
+    overallStats,
   ] = analytics;
 
   res.status(200).json(
@@ -1186,11 +1224,194 @@ const getCourtAnalytics = asyncHandler(async (req, res) => {
           activeCourts: 0,
           inactiveCourts: 0,
           averagePrice: 0,
-          totalCapacity: 0
+          totalCapacity: 0,
         },
-        period
+        period,
       },
-      'Court analytics fetched successfully'
+      "Court analytics fetched successfully"
+    )
+  );
+});
+
+// ====================================
+// BOOKING MANAGEMENT
+// ====================================
+
+// Get all bookings for admin management
+const getAllBookings = asyncHandler(async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    status,
+    paymentStatus,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    search,
+  } = req.query;
+
+  // Build match conditions
+  const matchConditions = {};
+
+  if (status && status !== "all") {
+    matchConditions.status = status;
+  }
+
+  if (paymentStatus && paymentStatus !== "all") {
+    matchConditions.paymentStatus = paymentStatus;
+  }
+
+  // Build aggregation pipeline
+  const pipeline = [
+    { $match: matchConditions },
+
+    // Populate user details
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              email: 1,
+              phoneNumber: 1,
+              profilePicture: 1,
+              role: 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$user" },
+
+    // Populate venue details
+    {
+      $lookup: {
+        from: "venues",
+        localField: "venue",
+        foreignField: "_id",
+        as: "venue",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              address: 1,
+              contactInfo: 1,
+              owner: 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$venue" },
+
+    // Populate court details
+    {
+      $lookup: {
+        from: "courts",
+        localField: "court",
+        foreignField: "_id",
+        as: "court",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              sport: 1,
+              pricePerHour: 1,
+              capacity: 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$court" },
+  ];
+
+  // Add search functionality
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { "user.fullName": { $regex: search, $options: "i" } },
+          { "user.email": { $regex: search, $options: "i" } },
+          { "venue.name": { $regex: search, $options: "i" } },
+          { "court.name": { $regex: search, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+  // Add sorting
+  const sortStage = {};
+  sortStage[sortBy] = sortOrder === "desc" ? -1 : 1;
+  pipeline.push({ $sort: sortStage });
+
+  // Execute aggregation with pagination
+  const options = {
+    page: parseInt(page),
+    limit: parseInt(limit),
+    pagination: true,
+  };
+
+  const result = await Booking.aggregatePaginate(
+    Booking.aggregate(pipeline),
+    options
+  );
+
+  // If aggregatePaginate is not available, fall back to manual pagination
+  if (!result) {
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const bookings = await Booking.aggregate([
+      ...pipeline,
+      { $skip: skip },
+      { $limit: parseInt(limit) },
+    ]);
+
+    const totalDocs = await Booking.aggregate([
+      ...pipeline.slice(0, -2), // Remove sort and pagination stages
+      { $count: "total" },
+    ]);
+
+    const total = totalDocs[0]?.total || 0;
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          bookings,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages,
+            totalDocs: total,
+            hasNextPage: parseInt(page) < totalPages,
+            hasPrevPage: parseInt(page) > 1,
+            limit: parseInt(limit),
+          },
+        },
+        "Bookings fetched successfully"
+      )
+    );
+  }
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        bookings: result.docs,
+        pagination: {
+          currentPage: result.page,
+          totalPages: result.totalPages,
+          totalDocs: result.totalDocs,
+          hasNextPage: result.hasNextPage,
+          hasPrevPage: result.hasPrevPage,
+          limit: result.limit,
+        },
+      },
+      "Bookings fetched successfully"
     )
   );
 });
@@ -1225,5 +1446,9 @@ export {
   // Court Management
   getAllCourts,
   updateCourtStatus,
+  updateCourt,
   getCourtAnalytics,
+
+  // Booking Management
+  getAllBookings,
 };

@@ -330,6 +330,18 @@ export const updateCourtStatus = async (courtId, data) => {
   }
 };
 
+export const updateCourt = async (courtId, data) => {
+  try {
+    const response = await axiosInstance.patch(
+      `/admin/courts/${courtId}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
 export const getCourtAnalytics = async (period = "30days") => {
   try {
     const response = await axiosInstance.get("/admin/courts/analytics", {

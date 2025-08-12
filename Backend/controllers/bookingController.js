@@ -1,6 +1,7 @@
 import Booking from "../models/booking.js";
 import Court from "../models/court.js";
 import Venue from "../models/venue.js";
+import { updateVenueStatistics } from "./venueController.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -330,11 +331,14 @@ const updatePaymentStatus = asyncHandler(async (req, res) => {
 
   await booking.save();
 
-  // Update venue and court statistics
-  await Venue.findByIdAndUpdate(booking.venue, {
-    $inc: { totalBookings: 1, totalEarnings: booking.pricing.totalAmount },
-  });
+  // Get the venue ID from the court
+  const court = await Court.findById(booking.court).populate("venue");
+  const venueId = court.venue._id;
 
+  // Update venue statistics with real calculated data
+  await updateVenueStatistics(venueId);
+
+  // Update court statistics
   await Court.findByIdAndUpdate(booking.court, {
     $inc: { totalBookings: 1, totalRevenue: booking.pricing.totalAmount },
   });

@@ -593,11 +593,19 @@ const VenueBookingPage = () => {
 
       const response = await createBookingService(bookingData);
 
-      // Show success message
-      alert("Booking created successfully! Redirecting to your bookings...");
+      // Show success message with options
+      const userChoice = window.confirm(
+        "Booking created successfully! 🎉\n\n" +
+          "Click 'OK' to view your bookings, or 'Cancel' to return to venue details."
+      );
 
-      // Navigate to user profile bookings section
-      navigate("/profile?tab=bookings");
+      if (userChoice) {
+        // Navigate to user profile bookings section
+        navigate("/profile?tab=bookings");
+      } else {
+        // Navigate back to venue details with a refresh flag
+        navigate(`/venue/${venueId}?refresh=true`);
+      }
     } catch (err) {
       console.error("Error creating booking:", err);
       alert(err.response?.data?.message || "Failed to create booking");
