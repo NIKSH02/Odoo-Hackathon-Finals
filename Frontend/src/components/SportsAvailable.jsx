@@ -81,6 +81,9 @@ export default function SportsAvailable({ sportsData = [] }) {
   };
 
   const getSportDescription = (sport) => {
+    if (sport.isPlaceholder || sport.totalCourts === 0) {
+      return "No courts available yet";
+    }
     if (sport.totalCourts === 1) {
       return `${sport.totalCourts} court available`;
     }
@@ -123,8 +126,17 @@ export default function SportsAvailable({ sportsData = [] }) {
           {sportsData.map((sport) => (
             <button
               key={sport._id}
-              onClick={() => setSelectedSport(sport)}
-              className="group bg-white border-2 border-gray-200 p-4 rounded-xl text-center hover:border-black hover:shadow-md transition-all duration-200"
+              onClick={() => {
+                if (!sport.isPlaceholder && sport.totalCourts > 0) {
+                  setSelectedSport(sport);
+                }
+              }}
+              disabled={sport.isPlaceholder || sport.totalCourts === 0}
+              className={`group bg-white border-2 border-gray-200 p-4 rounded-xl text-center transition-all duration-200 ${
+                sport.isPlaceholder || sport.totalCourts === 0
+                  ? "opacity-60 cursor-not-allowed"
+                  : "hover:border-black hover:shadow-md cursor-pointer"
+              }`}
             >
               <div className="text-2xl mb-2">{getSportIcon(sport._id)}</div>
               <div className="font-semibold text-gray-900 text-sm mb-1 capitalize">
@@ -133,8 +145,16 @@ export default function SportsAvailable({ sportsData = [] }) {
               <div className="text-xs text-gray-500 mb-2">
                 {getSportDescription(sport)}
               </div>
-              <div className="text-xs text-gray-600 font-medium group-hover:text-black transition-colors">
-                View Pricing
+              <div
+                className={`text-xs font-medium transition-colors ${
+                  sport.isPlaceholder || sport.totalCourts === 0
+                    ? "text-gray-400"
+                    : "text-gray-600 group-hover:text-black"
+                }`}
+              >
+                {sport.isPlaceholder || sport.totalCourts === 0
+                  ? "Coming Soon"
+                  : "View Pricing"}
               </div>
             </button>
           ))}

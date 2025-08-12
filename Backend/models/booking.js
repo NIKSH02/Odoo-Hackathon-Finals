@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const bookingSchema = new mongoose.Schema(
   {
@@ -126,6 +127,9 @@ bookingSchema.index({
 
 // Compound index for availability checking
 bookingSchema.index({ court: 1, bookingDate: 1, status: 1 });
+
+// Add aggregate paginate plugin
+bookingSchema.plugin(mongooseAggregatePaginate);
 
 const Booking = mongoose.model("Booking", bookingSchema);
 export default Booking;

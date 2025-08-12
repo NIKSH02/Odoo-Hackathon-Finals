@@ -1,6 +1,7 @@
 import Venue from "../models/venue.js";
 import Court from "../models/court.js";
 import Review from "../models/review.js";
+import Booking from "../models/booking.js";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -29,11 +30,12 @@ const getAllVenues = asyncHandler(async (req, res) => {
 
   // Build filter object
   // For debugging, allow fetching all venues regardless of status
-  const filter = includeAll === 'true' ? {} : { status: "approved", isActive: true };
-  
+  const filter =
+    includeAll === "true" ? {} : { status: "approved", isActive: true };
+
   // Debug: Log the filter being used
   console.log("Filter being used:", filter);
-  
+
   // Debug: Check total venues in database
   const totalVenuesInDb = await Venue.countDocuments({});
   console.log("Total venues in database:", totalVenuesInDb);
@@ -85,7 +87,7 @@ const getAllVenues = asyncHandler(async (req, res) => {
     console.log("Sample venue:", {
       name: venues[0].name,
       status: venues[0].status,
-      isActive: venues[0].isActive
+      isActive: venues[0].isActive,
     });
   }
 
@@ -123,6 +125,34 @@ const getVenueById = asyncHandler(async (req, res) => {
   const courts = await Court.find({ venue: venueId, isActive: true })
     .select("-__v")
     .populate("venue", "name");
+
+  // Calculate real booking statistics
+  const courtIds = courts.map((court) => court._id);
+
+  // Get total completed bookings count
+  const totalBookings = await Booking.countDocuments({
+    court: { $in: courtIds },
+    status: { $in: ["confirmed", "completed"] },
+  });
+
+  // Get total earnings from completed bookings
+  const earningsResult = await Booking.aggregate([
+    {
+      $match: {
+        court: { $in: courtIds },
+        status: { $in: ["confirmed", "completed"] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalEarnings: { $sum: "$totalPrice" },
+      },
+    },
+  ]);
+
+  const totalEarnings =
+    earningsResult.length > 0 ? earningsResult[0].totalEarnings : 0;
 
   // Group courts by sport for better organization
   const courtsBySport = courts.reduce((acc, court) => {
@@ -170,6 +200,9 @@ const getVenueById = asyncHandler(async (req, res) => {
       isMainPhoto: photo.isMainPhoto || false,
       _id: photo._id,
     })),
+    // Override with real booking statistics
+    totalBookings,
+    totalEarnings,
   };
 
   res.status(200).json(
@@ -188,6 +221,50 @@ const getVenueById = asyncHandler(async (req, res) => {
     )
   );
 });
+
+// Helper function to update venue statistics (can be called from booking controller)
+const updateVenueStatistics = async (venueId) => {
+  try {
+    // Get all courts for this venue
+    const courts = await Court.find({ venue: venueId, isActive: true });
+    const courtIds = courts.map((court) => court._id);
+
+    // Calculate real booking statistics
+    const totalBookings = await Booking.countDocuments({
+      court: { $in: courtIds },
+      status: { $in: ["confirmed", "completed"] },
+    });
+
+    const earningsResult = await Booking.aggregate([
+      {
+        $match: {
+          court: { $in: courtIds },
+          status: { $in: ["confirmed", "completed"] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: { $sum: "$totalPrice" },
+        },
+      },
+    ]);
+
+    const totalEarnings =
+      earningsResult.length > 0 ? earningsResult[0].totalEarnings : 0;
+
+    // Update venue with real statistics
+    await Venue.findByIdAndUpdate(venueId, {
+      totalBookings,
+      totalEarnings,
+    });
+
+    return { totalBookings, totalEarnings };
+  } catch (error) {
+    console.error("Error updating venue statistics:", error);
+    return { totalBookings: 0, totalEarnings: 0 };
+  }
+};
 
 // Create new venue (Facility Owner only)
 const createVenue = asyncHandler(async (req, res) => {
@@ -442,4 +519,5 @@ export {
   getOwnerVenues,
   toggleVenueStatus,
   getPopularVenues,
+  updateVenueStatistics,
 };

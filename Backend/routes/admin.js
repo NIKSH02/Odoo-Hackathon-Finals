@@ -29,7 +29,11 @@ import {
   // Court Management
   getAllCourts,
   updateCourtStatus,
+  updateCourt,
   getCourtAnalytics,
+
+  // Booking Management
+  getAllBookings,
 } from "../controllers/adminController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { requireAdmin } from "../middlewares/roleMiddleware.js";
@@ -79,6 +83,12 @@ router.get("/users/:userId/bookings", getUserBookingHistory);
 // ====================================
 router.get("/courts", getAllCourts);
 router.patch("/courts/:courtId/status", updateCourtStatus);
+router.patch("/courts/:courtId", updateCourt);
 router.get("/courts/analytics", getCourtAnalytics);
+
+// ====================================
+// BOOKING MANAGEMENT ROUTES
+// ====================================
+router.get("/bookings", getAllBookings);
 
 export default router;

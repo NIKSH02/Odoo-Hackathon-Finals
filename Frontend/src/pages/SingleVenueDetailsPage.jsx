@@ -60,7 +60,12 @@ const AboutVenue = ({ venue }) => {
             <div>
               <h4 className="font-bold text-gray-900 mb-1">Total Bookings</h4>
               <p className="text-sm text-gray-600">
-                {venue.totalBookings} successful bookings
+                {venue.totalBookings || 0} successful bookings
+                {venue.totalBookings > 0 && (
+                  <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Active Venue
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -99,24 +104,92 @@ const SingleVenueDetailsPage = () => {
   const [error, setError] = useState(null);
   const [showWeeklyCalendar, setShowWeeklyCalendar] = useState(false);
 
+  // Check for refresh flag in URL
+  const searchParams = new URLSearchParams(window.location.search);
+  const shouldRefresh = searchParams.get("refresh") === "true";
+
   const fetchVenueData = async () => {
     try {
       setLoading(true);
 
+      // Show a success message if this is a refresh after booking
+      if (shouldRefresh) {
+        // Optional: Show a toast notification instead of alert
+        setTimeout(() => {
+          const successDiv = document.createElement("div");
+          successDiv.innerHTML = `
+            <div style="
+              position: fixed; 
+              top: 20px; 
+              right: 20px; 
+              background: #10B981; 
+              color: white; 
+              padding: 12px 20px; 
+              border-radius: 8px; 
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+              z-index: 1000;
+              font-family: system-ui;
+              font-weight: 500;
+            ">
+              ✅ Booking successful! Venue data updated.
+            </div>
+          `;
+          document.body.appendChild(successDiv);
+          setTimeout(() => {
+            if (document.body.contains(successDiv)) {
+              document.body.removeChild(successDiv);
+            }
+          }, 3000);
+        }, 500);
+      }
+
       // Fetch venue details
       const venueResponse = await getVenueByIdService(venueId);
-      setVenue(venueResponse.data.data.venue);
+      const venueData = venueResponse.data.data.venue;
+      setVenue(venueData);
 
       // Fetch sports with court counts - try both new and old response structure
       try {
         const sportsResponse = await getSportsWithCourtCountsService(venueId);
-        setSportsData(
-          sportsResponse.data.data.sports || sportsResponse.data.data
-        );
+        const sportsData =
+          sportsResponse.data.data.sports || sportsResponse.data.data;
+
+        // If no courts exist but venue has sportsSupported, create placeholder data
+        if (
+          (!sportsData || sportsData.length === 0) &&
+          venueData.sportsSupported &&
+          venueData.sportsSupported.length > 0
+        ) {
+          const placeholderSports = venueData.sportsSupported.map((sport) => ({
+            _id: sport,
+            totalCourts: 0,
+            averagePrice: 0,
+            minPrice: 0,
+            maxPrice: 0,
+            courts: [],
+            isPlaceholder: true,
+          }));
+          setSportsData(placeholderSports);
+        } else {
+          setSportsData(sportsData);
+        }
       } catch (sportErr) {
         console.warn("Could not fetch sports data:", sportErr);
-        // Fallback: use venue's courts data if available
-        if (venueResponse.data.data.courts) {
+
+        // Fallback: create placeholder data from venue's sportsSupported
+        if (venueData.sportsSupported && venueData.sportsSupported.length > 0) {
+          const placeholderSports = venueData.sportsSupported.map((sport) => ({
+            _id: sport,
+            totalCourts: 0,
+            averagePrice: 0,
+            minPrice: 0,
+            maxPrice: 0,
+            courts: [],
+            isPlaceholder: true,
+          }));
+          setSportsData(placeholderSports);
+        } else if (venueResponse.data.data.courts) {
+          // Fallback: use venue's courts data if available
           const courtsData = venueResponse.data.data.courts;
           setSportsData(courtsData);
         }
@@ -138,8 +211,13 @@ const SingleVenueDetailsPage = () => {
   useEffect(() => {
     if (venueId) {
       fetchVenueData();
+
+      // Clean the URL if refresh flag was present
+      if (shouldRefresh) {
+        window.history.replaceState({}, "", `/venue/${venueId}`);
+      }
     }
-  }, [venueId]);
+  }, [venueId, shouldRefresh]);
 
   const formatOperatingHours = (operatingHours) => {
     if (!operatingHours) return "Operating hours not available";
@@ -394,30 +472,30 @@ const SingleVenueDetailsPage = () => {
   }
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Venue Header */}
-        <div className="mb-8">
-          <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        <div className="mb-6">
+          <div className="bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
               {venue.name}
             </h1>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-gray-600">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-gray-100 rounded-lg">
-                  <MapPin size={18} className="text-gray-700" />
+                  <MapPin size={16} className="text-gray-700" />
                 </div>
-                <span className="font-medium">
+                <span className="font-medium text-sm">
                   {formatAddress(venue.address)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-gray-100 rounded-lg">
-                  <Star size={18} className="fill-black text-black" />
+                  <Star size={16} className="fill-black text-black" />
                 </div>
-                <span className="font-bold text-gray-900">
+                <span className="font-bold text-gray-900 text-sm">
                   {venue.rating?.average || "0.0"}
                 </span>
-                <span className="text-gray-500">
+                <span className="text-gray-500 text-sm">
                   ({venue.rating?.totalReviews || 0} reviews)
                 </span>
               </div>
@@ -426,14 +504,14 @@ const SingleVenueDetailsPage = () => {
         </div>
 
         {/* Image and Sidebar Section - 70/30 split */}
-        <div className="flex flex-col lg:flex-row gap-8 mb-8">
+        <div className="flex flex-col lg:flex-row gap-6 mb-6">
           {/* Image Carousel - 70% width */}
           <div className="w-full lg:w-[70%]">
             <ImageCarousel images={venue.photos} />
           </div>
 
           {/* Sidebar - 30% width */}
-          <div className="w-full lg:w-[30%] space-y-6">
+          <div className="w-full lg:w-[30%] space-y-4">
             <button
               onClick={handleBookVenue}
               className="w-full bg-black text-white py-4 px-6 rounded-2xl font-bold hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-lg"
@@ -441,20 +519,22 @@ const SingleVenueDetailsPage = () => {
               📅 Book This Venue
             </button>
 
-            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-gray-100 rounded-xl">
-                  <Clock size={20} className="text-gray-700" />
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-4 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-gray-100 rounded-xl">
+                  <Clock size={18} className="text-gray-700" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900">Operating Hours</h3>
+                  <h3 className="font-bold text-gray-900 text-sm">
+                    Operating Hours
+                  </h3>
                   <div className="w-6 h-0.5 bg-black rounded-full mt-1"></div>
                 </div>
               </div>
-              <p className="text-lg font-bold text-gray-900 bg-gray-50 p-3 rounded-xl mb-3">
+              <p className="text-base font-bold text-gray-900 bg-gray-50 p-2 rounded-lg mb-2">
                 {formatOperatingHours(venue.operatingHours)}
               </p>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-xs text-gray-600 mb-3">
                 {venue.status === "active"
                   ? "Open all days"
                   : "Check availability"}
@@ -463,35 +543,37 @@ const SingleVenueDetailsPage = () => {
               {/* Check Availability Button */}
               <button
                 onClick={() => setShowWeeklyCalendar(true)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2 text-sm"
               >
-                <Clock size={16} />
+                <Clock size={14} />
                 Check Weekly Schedule
               </button>
             </div>
 
-            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-gray-100 rounded-xl">
-                  <MapPin size={20} className="text-gray-700" />
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-4 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-gray-100 rounded-xl">
+                  <MapPin size={18} className="text-gray-700" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900">Venue Address</h3>
+                  <h3 className="font-bold text-gray-900 text-sm">
+                    Venue Address
+                  </h3>
                   <div className="w-6 h-0.5 bg-black rounded-full mt-1"></div>
                 </div>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-xl mb-4">
-                <p className="text-gray-700 leading-relaxed font-medium">
+              <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                <p className="text-gray-700 leading-relaxed font-medium text-sm">
                   {formatAddress(venue.address)}
                 </p>
               </div>
 
               {/* Interactive Map */}
-              <VenueMap 
+              <VenueMap
                 venue={venue}
-                height="300px"
-                className="rounded-xl"
+                height="200px"
+                className="rounded-lg"
                 showFullAddress={false}
                 showDirections={true}
               />
@@ -499,9 +581,13 @@ const SingleVenueDetailsPage = () => {
           </div>
         </div>
 
-        {/* Full Width Content Below */}
-        <div className="w-full space-y-8">
+        {/* Sports Available Section - More prominent */}
+        <div className="mb-6">
           <SportsAvailable sportsData={sportsData} />
+        </div>
+
+        {/* Full Width Content Below */}
+        <div className="w-full space-y-6">
           <Amenities amenities={venue.amenities} />
           <AboutVenue venue={venue} />
           <VenueReviews venueId={venueId} onReviewAdded={handleReviewAdded} />

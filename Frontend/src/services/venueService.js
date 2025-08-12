@@ -1,51 +1,70 @@
 import api from "../api/axiosInstance";
-import { searchLocations, getCurrentLocation, reverseGeocode } from './locationService.js';
-import { processMultipleImages } from '../utils/imageUtils.js';
+import {
+  searchLocations,
+  getCurrentLocation,
+  reverseGeocode,
+} from "./locationService.js";
+import { processMultipleImages } from "../utils/imageUtils.js";
 
 // Helper function to calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Radius of the Earth in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c; // Distance in kilometers
   return distance;
 };
 
 // Filter venues within radius
-export const filterVenuesWithinRadius = (venues, centerCoordinates, radiusKm = 10) => {
-  if (!centerCoordinates || !Array.isArray(centerCoordinates) || centerCoordinates.length !== 2) {
+export const filterVenuesWithinRadius = (
+  venues,
+  centerCoordinates,
+  radiusKm = 10
+) => {
+  if (
+    !centerCoordinates ||
+    !Array.isArray(centerCoordinates) ||
+    centerCoordinates.length !== 2
+  ) {
     return venues; // Return all venues if no valid coordinates
   }
 
   const [centerLon, centerLat] = centerCoordinates;
-  
-  return venues.filter(venue => {
-    if (!venue.address?.coordinates?.latitude || !venue.address?.coordinates?.longitude) {
-      return false; // Exclude venues without coordinates
-    }
-    
-    const distance = calculateDistance(
-      centerLat,
-      centerLon,
-      venue.address.coordinates.latitude,
-      venue.address.coordinates.longitude
-    );
-    
-    return distance <= radiusKm;
-  }).map(venue => ({
-    ...venue,
-    distance: calculateDistance(
-      centerLat,
-      centerLon,
-      venue.address.coordinates.latitude,
-      venue.address.coordinates.longitude
-    ).toFixed(2)
-  }));
+
+  return venues
+    .filter((venue) => {
+      if (
+        !venue.address?.coordinates?.latitude ||
+        !venue.address?.coordinates?.longitude
+      ) {
+        return false; // Exclude venues without coordinates
+      }
+
+      const distance = calculateDistance(
+        centerLat,
+        centerLon,
+        venue.address.coordinates.latitude,
+        venue.address.coordinates.longitude
+      );
+
+      return distance <= radiusKm;
+    })
+    .map((venue) => ({
+      ...venue,
+      distance: calculateDistance(
+        centerLat,
+        centerLon,
+        venue.address.coordinates.latitude,
+        venue.address.coordinates.longitude
+      ).toFixed(2),
+    }));
 };
 
 // Get all venues with pagination and filters
@@ -93,7 +112,7 @@ export const createVenueService = async (venueData) => {
     const processedPhotos = await processMultipleImages(venueData.photos, {
       maxWidth: 1920,
       maxHeight: 1080,
-      quality: 0.9
+      quality: 0.9,
     });
 
     // Append non-file fields
@@ -129,20 +148,22 @@ export const updateVenueService = async (venueId, updateData) => {
     const formData = new FormData();
 
     // Process only the new File objects (not existing URLs)
-    const filesToProcess = updateData.photos.filter(photo => photo instanceof File);
+    const filesToProcess = updateData.photos.filter(
+      (photo) => photo instanceof File
+    );
     let processedPhotos = [];
-    
+
     if (filesToProcess.length > 0) {
       processedPhotos = await processMultipleImages(filesToProcess, {
         maxWidth: 1920,
         maxHeight: 1080,
-        quality: 0.9
+        quality: 0.9,
       });
     }
 
     // Create updated photos array with processed files
     let processedIndex = 0;
-    const updatedPhotos = updateData.photos.map(photo => {
+    const updatedPhotos = updateData.photos.map((photo) => {
       if (photo instanceof File) {
         return processedPhotos[processedIndex++];
       }
@@ -212,26 +233,30 @@ export const searchVenuesByMapboxLocation = async (locationQuery) => {
   try {
     // First, search for the location using Mapbox
     const locationResponse = await searchLocations(locationQuery);
-    
-    if (!locationResponse.success || !locationResponse.data || locationResponse.data.length === 0) {
-      throw new Error('Location not found');
+
+    if (
+      !locationResponse.success ||
+      !locationResponse.data ||
+      locationResponse.data.length === 0
+    ) {
+      throw new Error("Location not found");
     }
 
     const location = locationResponse.data[0]; // Use the first result
     const [longitude, latitude] = location.center;
 
     // Log the location details as requested
-    console.log('Searching venues for location:', {
+    console.log("Searching venues for location:", {
       city: location.parsed?.city,
       state: location.parsed?.state,
       country: location.parsed?.country,
-      coordinates: [longitude, latitude]
+      coordinates: [longitude, latitude],
     });
 
     // Then search for venues near that location
     return await getNearbyVenuesService(latitude, longitude);
   } catch (error) {
-    console.error('Error searching venues by location:', error);
+    console.error("Error searching venues by location:", error);
     throw error;
   }
 };
@@ -245,20 +270,20 @@ export const searchVenuesNearCurrentLocation = async (radius = 10) => {
 
     // Get reverse geocoding for logging
     const locationData = await reverseGeocode(longitude, latitude);
-    
+
     if (locationData.success && locationData.data) {
-      console.log('Current location:', {
+      console.log("Current location:", {
         city: locationData.data.parsed?.city,
         state: locationData.data.parsed?.state,
         country: locationData.data.parsed?.country,
-        coordinates: [longitude, latitude]
+        coordinates: [longitude, latitude],
       });
     }
 
     // Search for venues near current location
     return await getNearbyVenuesService(latitude, longitude, radius);
   } catch (error) {
-    console.error('Error searching venues near current location:', error);
+    console.error("Error searching venues near current location:", error);
     throw error;
   }
 };
@@ -285,16 +310,23 @@ export const searchVenuesWithLocationContext = async (filters = {}) => {
       // Use current location
       const position = await getCurrentLocation();
       coordinates = [position.longitude, position.latitude];
-      
+
       // Get location details for logging
-      const locationData = await reverseGeocode(position.longitude, position.latitude);
+      const locationData = await reverseGeocode(
+        position.longitude,
+        position.latitude
+      );
       if (locationData.success && locationData.data) {
         locationInfo = locationData.data;
       }
     } else if (location) {
       // Search for the specified location
       const locationResponse = await searchLocations(location);
-      if (locationResponse.success && locationResponse.data && locationResponse.data.length > 0) {
+      if (
+        locationResponse.success &&
+        locationResponse.data &&
+        locationResponse.data.length > 0
+      ) {
         const locationData = locationResponse.data[0];
         coordinates = locationData.center;
         locationInfo = locationData;
@@ -303,7 +335,7 @@ export const searchVenuesWithLocationContext = async (filters = {}) => {
 
     // Log the search context
     if (locationInfo) {
-      console.log('Searching venues with context:', {
+      console.log("Searching venues with context:", {
         city: locationInfo.parsed?.city,
         state: locationInfo.parsed?.state,
         country: locationInfo.parsed?.country,
@@ -313,8 +345,8 @@ export const searchVenuesWithLocationContext = async (filters = {}) => {
           priceRange,
           amenities,
           rating,
-          radius
-        }
+          radius,
+        },
       });
     }
 
@@ -325,7 +357,7 @@ export const searchVenuesWithLocationContext = async (filters = {}) => {
       priceRange,
       amenities,
       rating,
-      availability
+      availability,
     };
 
     // If we have coordinates, search nearby venues
@@ -334,14 +366,26 @@ export const searchVenuesWithLocationContext = async (filters = {}) => {
       searchParams.lat = latitude;
       searchParams.lng = longitude;
       searchParams.radius = radius;
-      
-      return api.get('/search/venues/nearby', { params: searchParams });
+
+      return api.get("/search/venues/nearby", { params: searchParams });
     } else {
       // Fallback to general search
-      return api.get('/search/venues', { params: searchParams });
+      return api.get("/search/venues", { params: searchParams });
     }
   } catch (error) {
-    console.error('Error in enhanced venue search:', error);
+    console.error("Error in enhanced venue search:", error);
+    throw error;
+  }
+};
+
+// Refresh venue statistics (can be called after bookings)
+export const refreshVenueStatisticsService = async (venueId) => {
+  try {
+    // This will trigger the backend to recalculate stats
+    const response = await getVenueByIdService(venueId);
+    return response;
+  } catch (error) {
+    console.error("Error refreshing venue statistics:", error);
     throw error;
   }
 };
