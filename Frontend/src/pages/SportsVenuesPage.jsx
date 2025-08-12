@@ -376,7 +376,7 @@ const SportsVenuesPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      {/* <Navbar /> */}
 
       {/* Mobile Header */}
       <div className="lg:hidden bg-white border-b border-gray-300 p-4">

@@ -130,7 +130,7 @@ const AboutPage = () => {
             variants={fadeInUp}
             className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-black via-gray-800 to-black bg-clip-text text-transparent"
           >
-            About SportSpace
+            About QuickCourt
           </motion.h1>
           <motion.p 
             variants={fadeInUp}
@@ -156,7 +156,7 @@ const AboutPage = () => {
                 Our Story
               </h2>
               <p className="text-lg leading-relaxed text-gray-600">
-                Founded in 2021, SportSpace began with a vision to revolutionize sports facility booking. What started as a simple platform connecting athletes with venues has evolved into a comprehensive sports ecosystem serving thousands of users.
+                Founded in 2025, QuickCourt began with a vision to revolutionize sports facility booking. What started as a simple platform connecting athletes with venues has evolved into a comprehensive sports ecosystem serving thousands of users.
               </p>
               <p className="text-lg leading-relaxed text-gray-600">
                 Today, we continue to innovate in the sports industry, leveraging technology to create seamless connections between athletes and top-quality facilities. Every booking on our platform represents a step towards achieving fitness goals and sporting excellence.

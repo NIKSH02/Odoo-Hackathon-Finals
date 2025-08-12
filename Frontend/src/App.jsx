@@ -118,7 +118,7 @@ const AppContent = () => {
             <Route
               path="/forgot-password"
               element={
-                <ProtectedRoute requireAuth={false}>
+                <ProtectedRoute requireAuth={false} allowAuthenticatedUsers={true}>
                   <ForgotPasswordPage />
                 </ProtectedRoute>
               }
@@ -126,7 +126,7 @@ const AppContent = () => {
             <Route
               path="/reset-password"
               element={
-                <ProtectedRoute requireAuth={false}>
+                <ProtectedRoute requireAuth={false} allowAuthenticatedUsers={true}>
                   <ResetPasswordPage />
                 </ProtectedRoute>
               }

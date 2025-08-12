@@ -6,7 +6,8 @@ const ProtectedRoute = ({
   children, 
   requireAuth = true, 
   requiredRole = null,
-  allowedRoles = null 
+  allowedRoles = null,
+  allowAuthenticatedUsers = false 
 }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
@@ -59,7 +60,7 @@ const ProtectedRoute = ({
     }
   } else {
     // Route is for non-authenticated users (like login/register)
-    if (isAuthenticated) {
+    if (isAuthenticated && !allowAuthenticatedUsers) {
       // If user is authenticated, redirect based on their role
       switch (user?.role) {
         case 'admin':

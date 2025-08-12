@@ -478,7 +478,7 @@ const UserProfile = () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="min-h-screen bg-gray-50">
         {/* Container for sidebar and content */}
         <div className="flex flex-col lg:flex-row">

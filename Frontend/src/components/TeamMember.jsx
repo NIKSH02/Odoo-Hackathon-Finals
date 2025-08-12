@@ -21,7 +21,7 @@ const teamMembers = [
     description: 'Product strategist crafting intuitive booking platforms'
   },
   {
-    name: 'Kshitij Bhare',
+    name: 'Prathamesh Yandolli',
     role: 'CFO & Strategy Head',
     image: '/images/mob6.jpg',
     description: 'Financial architect building sustainable sports growth'
@@ -148,7 +148,7 @@ const TeamSection = () => {
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl bg-gradient-to-br from-gray-200 to-gray-300 p-1">
+                  {/* <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl bg-gradient-to-br from-gray-200 to-gray-300 p-1">
                     <div className="w-full h-full rounded-full overflow-hidden">
                       <img
                         src={member.image}
@@ -156,17 +156,17 @@ const TeamSection = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                  </div>
+                  </div> */}
                   
                   {/* Floating badge */}
-                  <motion.div
+                  {/* <motion.div
                     className="absolute -bottom-2 -right-2 bg-gradient-to-r from-gray-800 to-black text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.3, delay: 0.2 }}
                   >
                     Lead
-                  </motion.div>
+                  </motion.div> */}
                 </motion.div>
               )}
 
